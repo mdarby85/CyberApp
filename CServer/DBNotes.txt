@@ -1,0 +1,60 @@
+------------------------------------------------------------------------
+CREATE TABLE public.knownpeople
+(
+    email character varying COLLATE pg_catalog."default" NOT NULL,
+    friendemail character varying COLLATE pg_catalog."default" NOT NULL,
+    status integer,
+    CONSTRAINT knownpeople_pkey PRIMARY KEY (email)
+)
+TABLESPACE pg_default;
+ALTER TABLE public.knownpeople
+    OWNER to postgres;
+
+------------------------------------------------------------------------
+CREATE TABLE public.people
+(
+    email character varying COLLATE pg_catalog."default" NOT NULL,
+    pwhash character(32) COLLATE pg_catalog."default" NOT NULL,
+    signintoken character(64) COLLATE pg_catalog."default",
+    tokentime integer,
+    CONSTRAINT people_pkey PRIMARY KEY (email)
+)
+TABLESPACE pg_default;
+ALTER TABLE public.people
+    OWNER to postgres;
+------------------------------------------------------------------------
+CREATE TABLE public."position"
+(
+    email character varying COLLATE pg_catalog."default" NOT NULL,
+    lat double precision NOT NULL,
+    "long" double precision NOT NULL,
+    CONSTRAINT position_pkey PRIMARY KEY (email)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE public."position"
+    OWNER to postgres;
+------------------------------------------------------------------------
+
+Starting/logging into Postgres: sudo -u postgres psql postgres
+change password: \password postgres
+
+Now, change:
+pg_hba.conf file (/etc/postgresql/12/main/pg_hba.conf*).
+This line:
+local   all             postgres                                peer
+Should be:
+local   all             postgres                                md5
+Then, restart postgres server: sudo service postgresql restart
+
+Note: Auth methods available:
+    trust - anyone who can connect to the server is authorized to access the database
+    peer - use client's operating system user name as database user name to access it.
+    md5 - password-base authentication
+
+
+CREATE DATABASE cyberdb
+connect to db: \c cyberdb
+list tables in database: \dt
+list columns in table: \d table_name
