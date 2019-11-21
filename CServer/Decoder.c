@@ -13,7 +13,6 @@ char CODE_FRIEND_REMOVE = 7;
 char CODE_EXIT = 8;
 static int TOKEN_SIZE = 64;
 
-
 /*VERIFIED TO WORK*/
 char* handleSignIn(char* myArray, PGconn *conn) {
     int len = strlen(myArray+1);
@@ -83,7 +82,7 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     /* I had to use union to do this, so sorry*/
     /* If the signin token matches the user, RETRIEVE LONGITUDE.val and LATITUDE.val, SET myResponse = 1*/
     /* If error, SET lattitude and longitude = 0, SET myResponse = 0*/
-    struct Position position = getPosition(conn, signInToken);
+    struct Position position = getPositionFromToken(conn, signInToken);
     latitude.val = position.lat;
     longitude.val = position.lon;
     myResponse = position.response;
@@ -139,7 +138,7 @@ char* handleUpdateLocation(char* myArray, PGconn *conn){
     return myReturn;
 }
 
-char* handleGetFriendLocation(char* myArray){
+char* handleGetFriendLocation(char* myArray, PGconn *conn){
     int length = strlen(myArray+65);
     char* signInToken = (char *) (malloc(sizeof(char)*64));
     char* friendName = (char*) (malloc(sizeof(char)*length));
@@ -158,12 +157,27 @@ char* handleGetFriendLocation(char* myArray){
     } longitude;
     latitude.val = 0;
     longitude.val = 0;
-    char myResponse = 1;
+    char myResponse = 0;
 
     /*CONNOR*/
     /* SET appropriate values for MyResponse, longitude, and lattitude*/
     /* If the signin token matches the friend of the user, SET longitude and latitude, myResponse = 1*/
     /* If error, SET lattitude and longitude = 0, SET myResponse = 0*/
+
+    char *userEmail = getEmailFromToken(conn, signInToken);
+    /* Returns empty string if no email is associated with a token. */
+    if (userEmail[0] == '\0'){
+        return userEmail;
+    } else if (strcmp(userEmail, friendName) == 0){
+        myResponse = 1;
+    }
+
+    if (getFriendStatus(conn, userEmail, friendName) == IS_FRIEND){
+        struct Position friendPosition = getPositionFromEmail(conn, friendName);
+        latitude.val = friendPosition.lat;
+        longitude.val = friendPosition.lon;
+        myResponse = friendPosition.response;
+    }
     myResult[0] = myResponse;
     latitude.val=reverseFloat(latitude.val);
     longitude.val=reverseFloat(longitude.val);
@@ -177,6 +191,7 @@ char* handleGetFriendLocation(char* myArray){
     return myResult;
 }
 
+//TODO: handleGetFriendRequest
 char* handleGetFriendRequest(char* myArray){
     char* signInToken;
     char* result;
@@ -192,8 +207,8 @@ char* handleGetFriendRequest(char* myArray){
      */
 }
 
-char* handleSendFriendRequest(char* myArray){
-    int myResponse;
+char* handleSendFriendRequest(char* myArray, PGconn *conn){
+    int myResponse = -1;
     char myToken[TOKEN_SIZE];
     int len = strlen(myArray+1);
     char friendName[len - TOKEN_SIZE];
@@ -205,12 +220,32 @@ char* handleSendFriendRequest(char* myArray){
      * If the friendName is already a friend of the user, SET MYRESPONSE =  0
      * If the friendName already has a friend request not accepted, SET MYRESPONSE = 2
      */
+
+    char *userEmail = getEmailFromToken(conn, myToken);
+    if (userEmail[0] == '\0'){
+        /*invalid token, return empty string */
+        return NULL;
+    }
+
+    int friendStatus = getFriendStatus(conn, userEmail, friendName);
+    if (friendStatus == NOT_FRIEND){
+        initFriendRequest(conn, userEmail, friendName);
+        myResponse = 1;
+    } else if (friendStatus == IS_FRIEND){
+        myResponse = 0;
+    } else if (friendStatus == PEND_FRIEND){
+        myResponse = 2;
+    } else {
+        /* Default case, should not hit */
+        return NULL;
+    }
+
     char* myReturn = (char*) (malloc(1));
     myReturn[0] = myResponse;
     return myReturn;
 }
 
-char* handleAcceptFriendRequest(char* myArray){
+char* handleAcceptFriendRequest(char* myArray, PGconn *conn){
     int myResponse;
     char myToken[TOKEN_SIZE];
     int len = strlen(myArray+1);
@@ -222,13 +257,32 @@ char* handleAcceptFriendRequest(char* myArray){
      * If the friendName did not send an active friend request, SET myResponse = 0
      * If the friendName is already a friend of the user, SET myResponse = 2 (i.e. Don't accept someone who's already your friend)
      */
+    char *userEmail = getEmailFromToken(conn, myToken);
+    if (userEmail[0] == '\0'){
+        /*invalid token, return empty string */
+        return NULL;
+    }
+    int friendStatus = getFriendStatus(conn, userEmail, friendName);
+    if (friendStatus == PEND_FRIEND){
+        if (acceptFriendRequest(conn, userEmail, friendName)){
+            myResponse = 1;
+        }
+    } else if (friendStatus == NOT_FRIEND){
+        myResponse = 0;
+    } else if (friendStatus == IS_FRIEND){
+        myResponse = 2;
+    } else {
+        /* Default case, should not hit */
+        return NULL;
+    }
+
     char* myReturn = (char*) (malloc(1));
     myReturn[0] = myResponse;
     return myReturn;
 }
 
-char* handleRemoveFriend(char* myArray){
-    int myResponse;
+char* handleRemoveFriend(char* myArray, PGconn *conn){
+    int myResponse = 0;
     char myToken[TOKEN_SIZE];
     int len = strlen(myArray+1);
     char friendName[len - TOKEN_SIZE];
@@ -238,30 +292,45 @@ char* handleRemoveFriend(char* myArray){
      * If friendName is a friend of user, REMOVE the friend, SET myResponse = 1
      * If the friendName is not a friend of the user, or sign-in token validation, SET MYRESPONSE= 0
      */
+
+    char *userEmail = getEmailFromToken(conn, myToken);
+    if (userEmail[0] == '\0'){
+        /*invalid token, return empty string */
+        return NULL;
+    }
+    int friendStatus = getFriendStatus(conn, userEmail, friendName);
+    if (friendStatus == IS_FRIEND){
+        if (removeFriend(conn, userEmail, friendName)){
+            myResponse = 1;
+        }
+    } else {
+        myResponse = 0;
+    }
+
     char* myReturn = (char*) (malloc(1));
     myReturn[0] = myResponse;
     return myReturn;
 }
 
-char* handleOptions(char* myArray){
+char* handleOptions(char* myArray, PGconn *conn){
     char option = myArray[0];
     char* myReturn;
     if(option == CODE_SIGN_IN)
         myReturn = handleSignIn(myArray, NULL);
     if(option == CODE_LOC_GET)
-//        myReturn = handleGetLocation(myArray);
+        myReturn = handleGetLocation(myArray, conn);
     if(option == CODE_LOC_UPDATE)
-//        myReturn = handleUpdateLocation(myArray);
+        myReturn = handleUpdateLocation(myArray, conn);
     if(option == CODE_LOC_FRIEND)
-        myReturn = handleGetFriendLocation(myArray);
+        myReturn = handleGetFriendLocation(myArray, conn);
     if(option == CODE_FRIEND_GET)
         myReturn = handleGetFriendRequest(myArray);
     if(option == CODE_FRIEND_SEND)
-        myReturn = handleSendFriendRequest(myArray);
+        myReturn = handleSendFriendRequest(myArray, conn);
     if(option == CODE_FRIEND_ACCEPT)
-        myReturn = handleAcceptFriendRequest(myArray);
+        myReturn = handleAcceptFriendRequest(myArray, conn);
     if(option == CODE_FRIEND_REMOVE)
-        myReturn = handleRemoveFriend(myArray);
+        myReturn = handleRemoveFriend(myArray, conn);
     return myReturn;
 
 }
@@ -304,8 +373,7 @@ char* generateToken(int length){
     return randomString;
 }
 
-float reverseFloat(const float inFloat)
-{
+float reverseFloat(const float inFloat){
     float retVal;
     char *floatToConvert = ( char* ) & inFloat;
     char *returnFloat = ( char* ) & retVal;

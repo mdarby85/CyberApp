@@ -9,12 +9,14 @@
 char *handleSignIn(char *myArray, PGconn *pConn);
 char* handleGetLocation(char* myArray, PGconn *conn);
 char* handleUpdateLocation(char* myArray, PGconn *conn);
-char* handleGetFriendLocation(char* myArray);
+char* handleGetFriendLocation(char* myArray, PGconn *conn);
 char* handleGetFriendRequest(char* myArray);
-char* handleSendFriendRequest(char* myArray);
-char* handleAcceptFriendRequest(char* myArray);
+char* handleSendFriendRequest(char* myArray, PGconn *conn);
+char* handleAcceptFriendRequest(char* myArray, PGconn *conn);
+char* handleRemoveFriend(char* myArray, PGconn *conn);
+char* handleOptions(char* myArray, PGconn *conn);
+
 char* generateToken(int length);
-char* handleOptions(char* myArray);
 int findResponseLength(char* myArray);
 float reverseFloat(const float inFloat);
 

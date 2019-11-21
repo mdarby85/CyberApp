@@ -13,7 +13,7 @@
 #define PORT 12347
 #define SA struct sockaddr
 
-void handleAccept(int);
+void handleAccept(int, PGconn *);
 
 
 int main()
@@ -26,12 +26,15 @@ int main()
 
 
     /* Database Variables */
-    const char *conninfo = "user=postgres password=put_your_password_here dbname = cyberdb";
+    const char *conninfo = "user=postgres password=Your_password_here dbname = cyberdb";
     PGconn *conn = connectToDB(conninfo);
 
     char *array = "0username\012345678901234567890123456789012";
 
-    handleUpdateLocation(array, conn);
+    handleSendFriendRequest(array, conn);
+//    char * signInToken = "dCcst6w?nF8pGh-Iiw0-JJvhGSpeZ-e3zgf0fJYAgQPM6Ufgi#dZGy!ejoqatu30\0";
+
+    printf("%i", getFriendStatus(conn, "test@email.com", "friend@email.com"));
 
 
     exit(0);
@@ -73,13 +76,13 @@ int main()
             exit(0);
         }
 
-        handleAccept(connfd);
+        handleAccept(connfd, conn);
     }
     close(sockfd);
     closeDBConnection(conn);
 }
 
-void handleAccept(int sockfd)
+void handleAccept(int sockfd, PGconn *conn)
 {
     char buff[MAX];
     int n;
@@ -90,7 +93,7 @@ void handleAccept(int sockfd)
         if(buff[0] == 8)
             break;
         char* myResponse;
-        myResponse = handleOptions(&buff);
+        myResponse = handleOptions(&buff, conn);
         int responseLength = findResponseLength(&buff);
         bzero(buff, MAX);
         n = 0;
