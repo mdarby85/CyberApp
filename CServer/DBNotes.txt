@@ -57,3 +57,11 @@ CREATE DATABASE cyberdb
 connect to db: \c cyberdb
 list tables in database: \dt
 list columns in table: \d table_name
+
+Setting up Java:
+javac --release 8 *.java
+cd ..
+java client.Client
+
+C compiling
+gcc -lpq *.c
