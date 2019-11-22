@@ -3,8 +3,7 @@ CREATE TABLE public.knownpeople
 (
     email character varying COLLATE pg_catalog."default" NOT NULL,
     friendemail character varying COLLATE pg_catalog."default" NOT NULL,
-    status integer,
-    CONSTRAINT knownpeople_pkey PRIMARY KEY (email)
+    status integer
 )
 TABLESPACE pg_default;
 ALTER TABLE public.knownpeople
