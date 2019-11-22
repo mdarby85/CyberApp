@@ -23,7 +23,8 @@ public abstract class DataProtocolDecoder {
     public static Location retrieveLocation(byte[] loc){
         ByteBuffer buf = ByteBuffer.wrap(loc);
         if(buf.get() == GOOD_RESPONSE){
-            return new Location(buf.getFloat(),buf.getFloat());
+	    Location loc1 = new Location(buf.getFloat(),buf.getFloat());
+	        return loc1;
         }else{
             return null;
         }

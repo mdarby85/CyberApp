@@ -18,8 +18,7 @@ public class Menu {
     private static final byte FRIEND_REMOVE = 'G';
 
     public static void displayMenu(User u){
-        System.out.println("Welcome "+ u.getEmail()+ "!");
-        System.out.println("Enter an option:");
+        System.out.println("\nEnter an option, "+ u.getEmail());
         System.out.println("A) Get my current location");
         System.out.println("B) Update my location");
         System.out.println("C) View a Friend's location");
@@ -44,22 +43,22 @@ public class Menu {
             user.setLocation(new Location(lat, longitude));
             return DataProtocolEncoder.updateLocation(user);
         } else if( c == LOC_FRIEND){
-            System.out.println("Enter the id of your friend");
-            String friendName = reader.nextLine();
+            System.out.println("Enter the email of your friend");
+            String friendName = reader.next();
             return DataProtocolEncoder.getFriendLocation(user, friendName);
         } else if( c == FRIEND_GET){
             return DataProtocolEncoder.getFriendRequest(user);
         } else if( c == FRIEND_SEND){
             System.out.println("Enter the email of your friend to send");
-            String friendName= reader.nextLine();
+            String friendName= reader.next();
             return DataProtocolEncoder.sendFriendRequest(user, friendName);
         } else if( c == FRIEND_ACCEPT){
             System.out.println("Enter the email of your friend to accept");
-            String friendName= reader.nextLine();
+            String friendName= reader.next();
             return DataProtocolEncoder.acceptFriendRequest(user, friendName);
         } else if( c == FRIEND_REMOVE){
             System.out.println("Enter the email of your friend");
-            String friendName= reader.nextLine();
+            String friendName= reader.next();
             return DataProtocolEncoder.removeFriend(user, friendName);
         }
         else{
@@ -72,44 +71,48 @@ public class Menu {
         if(c == LOC_GET){
             Location loc = DataProtocolDecoder.retrieveLocation(serverResponse);
             if(loc != null){
+                System.out.println("Your location is " + loc.getLattitude() +", " +loc.getLongitude());
                 user.setLocation(loc);
             } else {
-                System.out.println("Location could not be found at this time");
+                System.out.println("\nLocation could not be found at this time");
             }
         } else if( c == LOC_UPDATE){
-            if(myResponse==1)
-                System.out.println("Location Updated");
+            if(myResponse=='1')
+                System.out.println("\nLocation Updated");
             else
-                System.out.println("Error, invalid location");
+                System.out.println("\nError, invalid location");
         } else if( c == LOC_FRIEND){
-                if(myResponse == 1){
+                if(myResponse == '1'){
                     Location location = DataProtocolDecoder.retrieveLocation(serverResponse);
-                    System.out.println("Your friend is at "+ location.getLattitude()+", " + location.getLongitude());
+                    System.out.println("\nYour friend is at "+ location.getLattitude()+", " + location.getLongitude());
                 }
+		else{
+		    System.out.println("\nFriend not found, or you are not friends with this person");
+		}
         } else if( c == FRIEND_GET){
-            if(myResponse==1){
+            if(myResponse=='1'){
                 ArrayList<String> myFriends = DataProtocolDecoder.getFriends(serverResponse);
                 for(String f : myFriends){
                     System.out.println(f);
                 }
             }
         } else if( c == FRIEND_SEND){
-            if(myResponse == 1){
-                System.out.println("Friend Request sent!");
+            if(myResponse == '1'){
+                System.out.println("\nFriend Request sent!");
             }else{
-                System.out.println("Error");
+                System.out.println("\nError, my response was "+ myResponse);
             }
         } else if( c == FRIEND_ACCEPT){
-            if(myResponse == 1){
-                System.out.println("Accepted!");
+            if(myResponse == '1'){
+                System.out.println("\nAccepted!");
             }else{
-                System.out.println("Error!");
+                System.out.println("\nError!");
             }
         } else if( c == FRIEND_REMOVE){
-            if(myResponse == 1){
-                System.out.println("Friend Removed!");
+            if(myResponse == '1'){
+                System.out.println("\nFriend Removed!");
             }else{
-                System.out.println("Error");
+                System.out.println("\nError");
             }
         } else{
             throw new UnsupportedOperationException();

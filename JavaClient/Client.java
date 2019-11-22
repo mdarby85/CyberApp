@@ -18,20 +18,22 @@ public class Client {
         byte[] bytesToSend;
         byte[] bytesReceived = new byte[200];
         Scanner reader = new Scanner(System.in);
+	reader.useDelimiter("\\n");
         try {
             System.out.println("Welcome to Group 2's MAPZEST!");
             User myUser = authenticate(reader, out, in);
             if (!myUser.getAuthenticated()) {
                 throw new AuthenticationException("Max Tries Exceeded");
             }
-            Menu.displayMenu(myUser);
             String c="A";
+	    Menu.displayMenu(myUser);
             while( !(c=reader.next()).equals("H")){
                 try{
                     bytesToSend = Menu.handleOption(c.charAt(0), myUser, reader);
                     out.write(bytesToSend);
                     in.read(bytesReceived,0,Menu.getExpectedReturnSize(c.charAt(0)));
                     Menu.handleResponse(c.charAt(0),myUser,bytesReceived);
+		    Menu.displayMenu(myUser);
                 }catch (IllegalArgumentException ex){
                     System.out.println("Invalid Input: " + ex.getMessage());
                 }
