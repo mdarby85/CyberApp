@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 public class Client {
     private static String SERVERNAME = "localhost";
-    private static int PORT = 12347;
+    private static int PORT = 12348;
     private static int MAX_TRIES = 3;
 
     public static void main(String[] args) throws Exception {
@@ -62,9 +62,10 @@ public class Client {
                 myUser.setPassword(password);
                 out.write(DataProtocolEncoder.signIn(myUser));
                 in.read(buf, 0, 65);
-                if (buf[0] == 1) {
+                if (buf[0] == '1') {
                     valid = true;
                     myUser.setSignInToken(DataProtocolDecoder.retrieveToken(buf));
+		    System.out.println("my Token is " + myUser.getToken());
                     myUser.setAuhenticated(true);
                 } else {
                     System.out.println("Invalid Username/Password Pair, try again");

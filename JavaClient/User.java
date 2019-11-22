@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-
+import java.math.BigInteger;
 public class User {
 
     private static final Charset ENC = StandardCharsets.US_ASCII;
@@ -26,7 +26,7 @@ public class User {
         MessageDigest md5 = MessageDigest.getInstance("SHA-256");
         byte[] digest = md5.digest(pwd.getBytes(ENC));
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < digest.length; ++i) {
+        for (int i = 0; i < 32; ++i) {
             sb.append(Integer.toHexString((digest[i] & 0xFF) | 0x100).substring(1, 3));
         }
         this.passwordHash = sb.toString();

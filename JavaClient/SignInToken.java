@@ -1,10 +1,11 @@
 package client;
+import java.util.Arrays;
 
 public class SignInToken {
     byte[] token;
 
     public SignInToken(byte[] token){
-        this.token = token;
+        this.setToken(token);
     }
 
     public byte[] getToken() {
@@ -12,6 +13,6 @@ public class SignInToken {
     }
 
     public final void setToken(byte[] token) {
-        this.token = token;
+        this.token = Arrays.copyOf(token,token.length);
     }
 }

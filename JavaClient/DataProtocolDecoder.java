@@ -5,11 +5,12 @@ import java.util.ArrayList;
 
 public abstract class DataProtocolDecoder {
 
-    private static final byte GOOD_RESPONSE = 1;
+    private static final byte GOOD_RESPONSE = '1';
     private static final byte DELIMITER = (byte)'\0';
 
     public static SignInToken retrieveToken(byte[] token){
         ByteBuffer buf = ByteBuffer.wrap(token);
+	System.out.println("Getting token");
         if(buf.get() == GOOD_RESPONSE){
             byte[] mytoken = new byte[64];
             buf.get(mytoken,0,64);
