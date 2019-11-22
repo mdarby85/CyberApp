@@ -10,14 +10,14 @@
 #include "Database.h"
 
 #define MAX 800
-#define PORT 12347
+#define PORT 12348
 #define SA struct sockaddr
 
 void handleAccept(int, PGconn *);
 
-
 int main()
 {
+    printf("Starting Server\n");
     printf("Timestamp: %d\n",(int)time(NULL));
     time_t mytime = time(NULL);
     char * time_str = ctime(&mytime);
@@ -26,18 +26,10 @@ int main()
 
 
     /* Database Variables */
-    const char *conninfo = "user=postgres password=Your_password_here dbname = cyberdb";
+    const char *conninfo = "user=postgres password=postgres dbname = cyberdb";
     PGconn *conn = connectToDB(conninfo);
-
+    printf("Check 2: %p\n",conn);
     char *array = "0username\012345678901234567890123456789012";
-
-    handleSendFriendRequest(array, conn);
-//    char * signInToken = "dCcst6w?nF8pGh-Iiw0-JJvhGSpeZ-e3zgf0fJYAgQPM6Ufgi#dZGy!ejoqatu30\0";
-
-    printf("%i", getFriendStatus(conn, "test@email.com", "friend@email.com"));
-
-
-    exit(0);
 
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
@@ -84,17 +76,20 @@ int main()
 
 void handleAccept(int sockfd, PGconn *conn)
 {
+    printf("Check 3: %p\n", conn);
     char buff[MAX];
     int n;
     for (;;) {
+	printf("%p\n",conn);
         bzero(buff, MAX);
 
         read(sockfd, buff, sizeof(buff));
         if(buff[0] == 8)
             break;
         char* myResponse;
-        myResponse = handleOptions(&buff, conn);
-        int responseLength = findResponseLength(&buff);
+        myResponse = handleOptions(buff, conn);
+	printf("Response: %d\n",myResponse[0]);
+        int responseLength = findResponseLength(buff);
         bzero(buff, MAX);
         n = 0;
         /* and send that buffer to client */

@@ -1,7 +1,3 @@
-//
-// Created by maran on 11/18/2019.
-//
-
 #ifndef GROUP_PROJECT_DATABASE_H
 #define GROUP_PROJECT_DATABASE_H
 

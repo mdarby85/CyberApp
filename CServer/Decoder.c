@@ -13,21 +13,16 @@ char CODE_FRIEND_REMOVE = 7;
 char CODE_EXIT = 8;
 static int TOKEN_SIZE = 64;
 
-/*VERIFIED TO WORK*/
 char* handleSignIn(char* myArray, PGconn *conn) {
+    printf("The pointer points to %p\n",conn);
     int len = strlen(myArray+1);
     char *myUserName = (char *) malloc(sizeof(char) * len);
-    char *myHashedPassword = (char *) malloc(sizeof(char) * 32);
+    char *myHashedPassword = (char *) malloc(sizeof(char) * 33);
     strncpy(myUserName, myArray + 1, len);
     strncpy(myHashedPassword, myArray + len + 2, 32);
     char myResponse = 1;
-    /*CONNOR If the username and hashed password is in the database, SET MyRESPONSE = 1*/
-    /*Otherwise it's 0 */
-
-//    myUserName = "test@email.com";
-//    myHashedPassword = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
-    /* Checks if user + password exist in DB, updating myResponse accordingly*/
+    myHashedPassword[32]='\0';
+    printf("%s %s",myUserName,myHashedPassword);
     char query[500 + sizeof(myUserName) + sizeof(myHashedPassword) + TOKEN_SIZE];
     snprintf(query, sizeof(query), "SELECT * FROM people WHERE email = '%s' AND pwhash = '%s'", myUserName, myHashedPassword);
     /* Is the number of rows returned > 0? */
@@ -62,8 +57,8 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     char* signInToken = (char *) (malloc(sizeof(char)*65));
     char* myResult = (char *) (malloc(sizeof(char)*9));
     strncpy(signInToken, myArray + 1, 64);
-    signInToken[65] = '\0';
-
+    signInToken[64] = '\0';
+    printf("Hello %s\n", signInToken);
     char myResponse = 1;
     union
     {
@@ -77,11 +72,6 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     } longitude;
     latitude.val = 0;
     longitude.val = 0;
-    /*CONNOR*/
-    /* RETRIEVE appropriate values for MyResponse, longitude.val, and latitude.val variables*/
-    /* I had to use union to do this, so sorry*/
-    /* If the signin token matches the user, RETRIEVE LONGITUDE.val and LATITUDE.val, SET myResponse = 1*/
-    /* If error, SET lattitude and longitude = 0, SET myResponse = 0*/
     struct Position position = getPositionFromToken(conn, signInToken);
     latitude.val = position.lat;
     longitude.val = position.lon;
@@ -120,12 +110,6 @@ char* handleUpdateLocation(char* myArray, PGconn *conn){
     longitude.val = reverseFloat(longitude.val);
     strncpy(signInToken, myArray + 1, 64);
     char myResponse = 0;
-    /*CONNOR*/
-    /* Set appropriate values for MyResponse*/
-    /* Find the sign-in token matching a user, UPDATE location, or ADD a location if one does not exist*/
-    /* If a sign-in token does not exist, SET lattitude and longitude = 0,SET  myResponse = 0*/
-
-//    signInToken = "dCcst6w?nF8pGh-Iiw0-JJvhGSpeZ-e3zgf0fJYAgQPM6Ufgi#dZGy!ejoqatu30\0";
     if (updateLocation(conn, signInToken, latitude.val, longitude.val) == 1){
         myResponse = '1';
     }
@@ -158,11 +142,6 @@ char* handleGetFriendLocation(char* myArray, PGconn *conn){
     latitude.val = 0;
     longitude.val = 0;
     char myResponse = 0;
-
-    /*CONNOR*/
-    /* SET appropriate values for MyResponse, longitude, and lattitude*/
-    /* If the signin token matches the friend of the user, SET longitude and latitude, myResponse = 1*/
-    /* If error, SET lattitude and longitude = 0, SET myResponse = 0*/
 
     char *userEmail = getEmailFromToken(conn, signInToken);
     /* Returns empty string if no email is associated with a token. */
@@ -316,7 +295,7 @@ char* handleOptions(char* myArray, PGconn *conn){
     char option = myArray[0];
     char* myReturn;
     if(option == CODE_SIGN_IN)
-        myReturn = handleSignIn(myArray, NULL);
+        myReturn = handleSignIn(myArray, conn);
     if(option == CODE_LOC_GET)
         myReturn = handleGetLocation(myArray, conn);
     if(option == CODE_LOC_UPDATE)

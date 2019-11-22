@@ -1,11 +1,9 @@
-//
-// Created by maran on 11/18/2019.
-//
 #include <stdlib.h>
 #include "Database.h"
 
 PGconn* connectToDB(const char *conninfo){
     PGconn *conn = PQconnectdb(conninfo);
+    printf("1: %p\n",conn);
     /* Check to see that the backend connection was successfully made */
     if (PQstatus(conn) != CONNECTION_OK) {
         fprintf(stderr, "Connection to database failed: %s", PQerrorMessage(conn));
@@ -13,6 +11,7 @@ PGconn* connectToDB(const char *conninfo){
         exit(1);
     } else {
         printf("Database Connection Successful!\n");
+	printf("Check 1: %p\n",conn);
         return conn;
     }
 }
@@ -23,7 +22,7 @@ void closeDBConnection(PGconn *conn){
 }
 
 int processQuery(PGconn *conn, const char *query){
-    PGresult *res;
+	PGresult *res;
     if ((res = PQexec(conn, query)) == NULL){
         printf("%s\n", PQerrorMessage(conn));
         PQclear(res);
@@ -51,7 +50,7 @@ struct Position getPositionFromToken(PGconn *conn, const char *token){
     temp.response = '0';
 
     char query[100 + 64];
-    snprintf(query, sizeof(query), "SELECT lat, long FROM position NATURAL JOIN people WHERE signintoken = '%s';", token);
+    snprintf(query, sizeof(query), "SELECT lat, long FROM position NATURAL JOIN people WHERE signintoken = '%.64s';", token);
 
     PGresult *res;
     if ((res = PQexec(conn, query)) == NULL){
@@ -154,7 +153,6 @@ char* getEmailFromToken(PGconn *conn, const char* token){
             PQclear(res);
             return email;
         }
-//        printQuery(res);
     } else {
         printf("%s\n", PQresStatus(PQresultStatus(res)));
         printf("%s\n", PQresultErrorMessage(res));
@@ -185,7 +183,6 @@ int getFriendStatus(PGconn *conn, const char *userEmail, const char *friendEmail
         } else {
             friendStatus = NOT_FRIEND;
         }
-//        printQuery(res);
     } else {
         printf("%s\n", PQresStatus(PQresultStatus(res)));
         printf("%s\n", PQresultErrorMessage(res));
