@@ -91,6 +91,7 @@ public class Menu {
 		}
         } else if( c == FRIEND_GET){
             if(myResponse=='1'){
+		    System.out.println("\nYou have friend requests from: ");
                 ArrayList<String> myFriends = DataProtocolDecoder.getFriends(serverResponse);
                 for(String f : myFriends){
                     System.out.println(f);

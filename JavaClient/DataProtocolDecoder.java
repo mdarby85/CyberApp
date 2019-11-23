@@ -2,7 +2,7 @@ package client;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-
+import java.util.*;
 public abstract class DataProtocolDecoder {
 
     private static final byte GOOD_RESPONSE = '1';
@@ -34,12 +34,14 @@ public abstract class DataProtocolDecoder {
         ByteBuffer buf = ByteBuffer.wrap(friendList);
         ArrayList<String> myList = new ArrayList<>();
         StringBuilder myBuilder = new StringBuilder();
+	System.out.println(Arrays.toString(friendList));
         if(buf.get() == GOOD_RESPONSE){
             int numList = buf.getInt();
-            char c;
+            byte c;
             for(int i=0;i<numList;i++) {
-                while ((c = buf.getChar()) != DELIMITER) {
-                    myBuilder.append(c);
+                while (((c = buf.get()) != DELIMITER)) {
+                     System.out.println((char)c);
+		     myBuilder.append((char)c);
                 }
                 myList.add(myBuilder.toString());
                 myBuilder.setLength(0);
