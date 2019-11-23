@@ -77,12 +77,12 @@ public class Menu {
                 System.out.println("\nLocation could not be found at this time");
             }
         } else if( c == LOC_UPDATE){
-            if(myResponse=='1')
+            if(myResponse==1)
                 System.out.println("\nLocation Updated");
             else
                 System.out.println("\nError, invalid location");
         } else if( c == LOC_FRIEND){
-                if(myResponse == '1'){
+                if(myResponse == 1){
                     Location location = DataProtocolDecoder.retrieveLocation(serverResponse);
                     System.out.println("\nYour friend is at "+ location.getLattitude()+", " + location.getLongitude());
                 }
@@ -90,27 +90,34 @@ public class Menu {
 		    System.out.println("\nFriend not found, or you are not friends with this person");
 		}
         } else if( c == FRIEND_GET){
-            if(myResponse=='1'){
+            if(myResponse==1){
 		    System.out.println("\nYou have friend requests from: ");
                 ArrayList<String> myFriends = DataProtocolDecoder.getFriends(serverResponse);
                 for(String f : myFriends){
                     System.out.println(f);
                 }
             }
+	    else{
+	       System.out.println("\nNo active friend requests!");
+	    }
         } else if( c == FRIEND_SEND){
-            if(myResponse == '1'){
-                System.out.println("\nFriend Request sent!");
+            if(myResponse == 1){
+                System.out.println("\nFriend Request Sent!");
+            }else if(myResponse == 2){
+                System.out.println("\nThe name you entered is already your friend!");
             }else{
-                System.out.println("\nError, my response was "+ myResponse);
-            }
+	        System.out.println("\nUser not found!");
+	    }
         } else if( c == FRIEND_ACCEPT){
-            if(myResponse == '1'){
+            if(myResponse == 1){
                 System.out.println("\nAccepted!");
+            }else if(myResponse == 2){
+                System.out.println("\nThe name you entered is already your friend!");
             }else{
-                System.out.println("\nError!");
-            }
+	        System.out.println("\nUser not found, or has not sent you a friend request!");
+	    }
         } else if( c == FRIEND_REMOVE){
-            if(myResponse == '1'){
+            if(myResponse == 1){
                 System.out.println("\nFriend Removed!");
             }else{
                 System.out.println("\nError");
