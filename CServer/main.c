@@ -76,19 +76,14 @@ int main()
 
 void handleAccept(int sockfd, PGconn *conn)
 {
-    printf("Check 3: %p\n", conn);
     char buff[MAX];
+    char *myResponse = (char*) malloc(sizeof(char)*MAX);
     int n;
-    for (;;) {
-	printf("%p\n",conn);
-        bzero(buff, MAX);
-
+    for (;;) {        
+	bzero(buff, MAX);
         read(sockfd, buff, sizeof(buff));
-        if(buff[0] == 8)
-            break;
-        char* myResponse;
         myResponse = handleOptions(buff, conn);
-	printf("Response: %d\n",myResponse[0]);
+	printf("Response: %d\n",buff[0]);
 	int responseLength = findResponseLength(buff);
         bzero(buff, MAX);
         n = 0;

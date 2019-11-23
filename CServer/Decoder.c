@@ -12,26 +12,27 @@ char CODE_FRIEND_ACCEPT = 6;
 char CODE_FRIEND_REMOVE = 7;
 char CODE_EXIT = 8;
 static int TOKEN_SIZE = 64;
-static int PASSWORD_HASHSIZE;
+static int PASSWORD_HASHSIZE=32;
 
 char* handleSignIn(char* myArray, PGconn *conn) {
     int len = strlen(myArray+1);
     char *myUserName = (char *) malloc(sizeof(char) * len);
     char *myHashedPassword = (char *) malloc(sizeof(char) * (PASSWORD_HASHSIZE+1));
-    strlcpy(myUserName, myArray + 1, len);
+    strncpy(myUserName, myArray + 1, len);
     strncpy(myHashedPassword, myArray + len + 2, PASSWORD_HASHSIZE);
     char myResponse = 1;
     myHashedPassword[PASSWORD_HASHSIZE]='\0';
     char query[500 + sizeof(myUserName) + sizeof(myHashedPassword) + TOKEN_SIZE];
     snprintf(query, sizeof(query), "SELECT * FROM people WHERE email = '%s' AND pwhash = '%.32s'", myUserName, myHashedPassword);
+    printf("%s\n",query);
     /* Is the number of rows returned > 0? */
-    myResponse = (processQuery(conn, query) == 0 ? '0' : '1');
+    myResponse = (processQuery(conn, query) == 0 ? 0 : 1);
     char *serverResponse = (char *) malloc(sizeof(char) * (TOKEN_SIZE+1));
     char* token = (char *) malloc(sizeof(char) * TOKEN_SIZE);
     strncpy(token, generateToken(TOKEN_SIZE), TOKEN_SIZE);
     strncpy(serverResponse + 1, token, TOKEN_SIZE);
     serverResponse[0] = myResponse;
-    if (myResponse == '1' || myResponse == 1) {
+    if (myResponse == 1) {
         char token_copy[65];
         snprintf(token_copy, TOKEN_SIZE+1, "%s", token);
         token_copy[64] = '\0';
@@ -42,8 +43,7 @@ char* handleSignIn(char* myArray, PGconn *conn) {
         free(myUserName);
     if(myHashedPassword)
         free(myHashedPassword);
-    if(token)
-	free(token);
+    printf("MY SERVER RESPONSE is %c\n",serverResponse);
     return serverResponse;
 }
 
@@ -52,6 +52,7 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     char* myResult = (char *) (malloc(sizeof(char)*9));
     strncpy(signInToken, myArray + 1, TOKEN_SIZE);
     signInToken[TOKEN_SIZE] = '\0';
+    printf("o\n");
     printf("Hello %s\n", signInToken);
     char myResponse = 1;
     union
@@ -75,8 +76,6 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     longitude.val=reverseFloat(longitude.val);
     strncpy(myResult+1,latitude.bytes,4);
     strncpy(myResult+5,longitude.bytes,4);
-    if(signInToken)
-        free(signInToken);
     return myResult;
 }
 
@@ -302,7 +301,10 @@ char* handleRemoveFriend(char* myArray, PGconn *conn){
 }
 
 char* handleOptions(char* myArray, PGconn *conn){
+    printf("handling options\n");
+    printf("%.10s\n",myArray);
     char option = myArray[0];
+    printf("OPTION SELECTED WAS %d\n",option);
     char* myReturn;
     if(option == CODE_SIGN_IN)
         myReturn = handleSignIn(myArray, conn);

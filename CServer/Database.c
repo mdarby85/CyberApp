@@ -3,7 +3,6 @@
 
 PGconn* connectToDB(const char *conninfo){
     PGconn *conn = PQconnectdb(conninfo);
-    printf("1: %p\n",conn);
     /* Check to see that the backend connection was successfully made */
     if (PQstatus(conn) != CONNECTION_OK) {
         fprintf(stderr, "Connection to database failed: %s", PQerrorMessage(conn));
@@ -11,7 +10,6 @@ PGconn* connectToDB(const char *conninfo){
         exit(1);
     } else {
         printf("Database Connection Successful!\n");
-	printf("Check 1: %p\n",conn);
         return conn;
     }
 }
@@ -64,7 +62,7 @@ struct Position getPositionFromToken(PGconn *conn, const char *token){
         if (PQntuples(res) > 0) {
             temp.lat = atof(PQgetvalue(res, 0, 0));
             temp.lon = atof(PQgetvalue(res, 0, 1));
-            temp.response = PQntuples(res) > 0 ? '1' : '0';
+            temp.response = PQntuples(res) > 0 ? 1 : 0;
         }
         printQuery(res);
     } else {
@@ -165,7 +163,7 @@ char* getEmailFromToken(PGconn *conn, const char* token){
 
 char* viewFriendRequests(PGconn *conn, const char *userEmail){
     char query[164];
-    snprintf(query, sizeof(query), "SELECT * FROM knownpeople WHERE status = 1 AND email = '%s';", userEmail);
+    snprintf(query, sizeof(query), "SELECT * FROM knownpeople WHERE status = 1 AND friendemail = '%s';", userEmail);
     char* myFriends =(malloc(sizeof(char)*200));
     PGresult *res;
     union myInt{
@@ -186,23 +184,13 @@ char* viewFriendRequests(PGconn *conn, const char *userEmail){
 	    int len = 4;
 	    strncpy(myFriends,"aaaa",4); 
 	    for(i=0;i<PQntuples(res);i++){
-                strcat(myFriends+len,PQgetvalue(res, i, 1));
-                printf("FRIEND FOUND + %s\n",myFriends+len);
+                strcat(myFriends+len,PQgetvalue(res, i, 0));
 	        len = strlen(myFriends+len) + 1+ len;
-		printf("My len is now at %d\n",len);
 	    }
             myFriends[0]=myInt.num[0];
             myFriends[1]=myInt.num[1];
             myFriends[2]=myInt.num[2];
             myFriends[3]=myInt.num[3];
-
-	    for(i=0;i<100;i++){
-            if(myFriends[i] == '\0'){
-	       printf("NULL AT %d\n",i);
-	    } 
-	    printf("%c",myFriends[i]);
-	    }
-	    printf("\n");
 
         } else {
 	    myFriends[0]=0;
