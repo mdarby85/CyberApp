@@ -3,7 +3,8 @@ CREATE TABLE public.knownpeople
 (
     email character varying COLLATE pg_catalog."default" NOT NULL,
     friendemail character varying COLLATE pg_catalog."default" NOT NULL,
-    status integer
+    status integer,
+    CONSTRAINT knownpeople_pkey PRIMARY KEY (email)
 )
 TABLESPACE pg_default;
 ALTER TABLE public.knownpeople
@@ -57,11 +58,3 @@ CREATE DATABASE cyberdb
 connect to db: \c cyberdb
 list tables in database: \dt
 list columns in table: \d table_name
-
-Setting up Java:
-javac --release 8 *.java
-cd ..
-java client.Client
-
-C compiling
-gcc -lpq *.c

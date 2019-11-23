@@ -89,7 +89,7 @@ void handleAccept(int sockfd, PGconn *conn)
         char* myResponse;
         myResponse = handleOptions(buff, conn);
 	printf("Response: %d\n",myResponse[0]);
-        int responseLength = findResponseLength(buff);
+	int responseLength = findResponseLength(buff);
         bzero(buff, MAX);
         n = 0;
         /* and send that buffer to client */

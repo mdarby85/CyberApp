@@ -10,7 +10,7 @@ char *handleSignIn(char *myArray, PGconn *pConn);
 char* handleGetLocation(char* myArray, PGconn *conn);
 char* handleUpdateLocation(char* myArray, PGconn *conn);
 char* handleGetFriendLocation(char* myArray, PGconn *conn);
-char* handleGetFriendRequest(char* myArray);
+char* handleGetFriendRequest(PGconn *conn,char* myArray);
 char* handleSendFriendRequest(char* myArray, PGconn *conn);
 char* handleAcceptFriendRequest(char* myArray, PGconn *conn);
 char* handleRemoveFriend(char* myArray, PGconn *conn);

@@ -2,6 +2,7 @@
 #define GROUP_PROJECT_DATABASE_H
 
 #include <libpq-fe.h>
+#include <string.h>
 enum FRIEND_STATE {NOT_FRIEND, PEND_FRIEND, IS_FRIEND};
 
 struct Position {
@@ -22,7 +23,7 @@ int getFriendStatus(PGconn *conn, const char *userEmail, const char *friendEmail
 int initFriendRequest(PGconn *conn, const char *userEmail, const char *friendEmail);
 int acceptFriendRequest(PGconn *conn, const char *userEmail, const char *friendEmail);
 int removeFriend(PGconn *conn, const char *userEmail, const char *friendEmail);
-
+char* viewFriendRequests(PGconn *conn, const char *userEmail);
 
 
 #endif //GROUP_PROJECT_DATABASE_H
