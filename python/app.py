@@ -18,12 +18,16 @@ def home(request, response):
     # print(username + " " + passwd)
 
 # Route for '/success' path
-@app.route("/login")  # Flask-style annotation
+@app.route("/success")  # Flask-style annotation
 def success(request, response):
     response.text = open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
                          + '/success.html').read()
 
-
+# Route for '/register' path
+@app.route("/register")  # Flask-style annotation
+def register(request, response):
+    response.text = open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+                         + '/register.html').read()
 
 
 # Test server for running the Python code
