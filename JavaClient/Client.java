@@ -5,11 +5,13 @@ import java.io.*;
 import java.net.Socket;
 import java.util.InputMismatchException;
 import java.util.Scanner;
+import java.util.Locale;
 
 public class Client {
     private static String SERVERNAME = "localhost";
     private static int PORT = 12348;
     private static int MAX_TRIES = 3;
+    private static Locale ENGLISH = Locale.forLanguageTag("en");
 
     public static void main(String[] args) throws Exception {
         Socket s = new Socket(SERVERNAME, PORT);
@@ -27,7 +29,7 @@ public class Client {
             }
             String c="A";
 	    Menu.displayMenu(myUser);
-            while( !(c=reader.next()).equals("H")){
+            while( !(c=reader.next().toUpperCase(ENGLISH)).equals("H")){
                 try{
                     bytesToSend = Menu.handleOption(c.charAt(0), myUser, reader);
                     out.write(bytesToSend);
@@ -50,7 +52,7 @@ public class Client {
         User myUser = new User();
         boolean valid = false;
         byte[] buf = new byte[65];
-        int numTries = 0;
+        int numTries = 1;
         while(!valid && numTries <= MAX_TRIES){
             System.out.println("Enter an email");
             String email = reader.nextLine();
@@ -64,15 +66,15 @@ public class Client {
                 myUser.setPassword(password);
                 out.write(DataProtocolEncoder.signIn(myUser));
                 in.read(buf, 0, 65);
-                if (buf[0] == '1') {
+                if (buf[0] == 1) {
                     valid = true;
                     myUser.setSignInToken(DataProtocolDecoder.retrieveToken(buf));
 		    System.out.println("my Token is " + myUser.getToken());
                     myUser.setAuhenticated(true);
                 } else {
                     System.out.println("Invalid Username/Password Pair, try again");
-                    numTries++;
                     System.out.println("Try " + numTries + " of " + MAX_TRIES);
+		    numTries++;
                 }
             }
         }
