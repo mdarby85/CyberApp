@@ -12,33 +12,26 @@ char CODE_FRIEND_ACCEPT = 6;
 char CODE_FRIEND_REMOVE = 7;
 char CODE_EXIT = 8;
 static int TOKEN_SIZE = 64;
+static int PASSWORD_HASHSIZE;
 
 char* handleSignIn(char* myArray, PGconn *conn) {
-    printf("The pointer points to %p\n",conn);
     int len = strlen(myArray+1);
     char *myUserName = (char *) malloc(sizeof(char) * len);
-    char *myHashedPassword = (char *) malloc(sizeof(char) * 33);
-    strncpy(myUserName, myArray + 1, len);
-    strncpy(myHashedPassword, myArray + len + 2, 32);
+    char *myHashedPassword = (char *) malloc(sizeof(char) * (PASSWORD_HASHSIZE+1));
+    strlcpy(myUserName, myArray + 1, len);
+    strncpy(myHashedPassword, myArray + len + 2, PASSWORD_HASHSIZE);
     char myResponse = 1;
-    myHashedPassword[32]='\0';
-    printf("%s %s",myUserName,myHashedPassword);
+    myHashedPassword[PASSWORD_HASHSIZE]='\0';
     char query[500 + sizeof(myUserName) + sizeof(myHashedPassword) + TOKEN_SIZE];
     snprintf(query, sizeof(query), "SELECT * FROM people WHERE email = '%s' AND pwhash = '%.32s'", myUserName, myHashedPassword);
     /* Is the number of rows returned > 0? */
     myResponse = (processQuery(conn, query) == 0 ? '0' : '1');
-
     char *serverResponse = (char *) malloc(sizeof(char) * (TOKEN_SIZE+1));
     char* token = (char *) malloc(sizeof(char) * TOKEN_SIZE);
     strncpy(token, generateToken(TOKEN_SIZE), TOKEN_SIZE);
     strncpy(serverResponse + 1, token, TOKEN_SIZE);
     serverResponse[0] = myResponse;
-    if (myResponse == '1') {
-        /*CONNOR
-         * If the username was authenticated, UPDATE the sign-in token in the database
-         * Otherwise, do nothing and SET MyResponse = 0
-         */
-        /* Had to add the \0 to insert into the DB */
+    if (myResponse == '1' || myResponse == 1) {
         char token_copy[65];
         snprintf(token_copy, TOKEN_SIZE+1, "%s", token);
         token_copy[64] = '\0';
@@ -49,15 +42,16 @@ char* handleSignIn(char* myArray, PGconn *conn) {
         free(myUserName);
     if(myHashedPassword)
         free(myHashedPassword);
+    if(token)
+	free(token);
     return serverResponse;
 }
 
-/* Verified to work*/
 char* handleGetLocation(char* myArray, PGconn *conn){
-    char* signInToken = (char *) (malloc(sizeof(char)*65));
+    char* signInToken = (char *) (malloc(sizeof(char)*(TOKEN_SIZE+1)));
     char* myResult = (char *) (malloc(sizeof(char)*9));
-    strncpy(signInToken, myArray + 1, 64);
-    signInToken[64] = '\0';
+    strncpy(signInToken, myArray + 1, TOKEN_SIZE);
+    signInToken[TOKEN_SIZE] = '\0';
     printf("Hello %s\n", signInToken);
     char myResponse = 1;
     union
@@ -76,7 +70,6 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     latitude.val = position.lat;
     longitude.val = position.lon;
     myResponse = position.response;
-
     myResult[0] = myResponse;
     latitude.val=reverseFloat(latitude.val);
     longitude.val=reverseFloat(longitude.val);
@@ -88,8 +81,7 @@ char* handleGetLocation(char* myArray, PGconn *conn){
 }
 
 char* handleUpdateLocation(char* myArray, PGconn *conn){
-    char* signInToken = (char *) (malloc(sizeof(char)*64));
-
+    char* signInToken = (char *) (malloc(sizeof(char)*TOKEN_SIZE));
     union
     {
         char bytes[4];
@@ -104,15 +96,14 @@ char* handleUpdateLocation(char* myArray, PGconn *conn){
 
     latitude.val=0;
     longitude.val=0;
-    strncpy(latitude.bytes,myArray+65, 4);
-    strncpy(longitude.bytes,myArray+69, 4);
+    strncpy(latitude.bytes,myArray+TOKEN_SIZE+1, 4);
+    strncpy(longitude.bytes,myArray+TOKEN_SIZE+5, 4);
     latitude.val = reverseFloat(latitude.val);
     longitude.val = reverseFloat(longitude.val);
-    printf("lat is %f\n",longitude.val);
-    strncpy(signInToken, myArray + 1, 64);
+    strncpy(signInToken, myArray + 1, TOKEN_SIZE);
     char myResponse = 0;
     if (updateLocation(conn, signInToken, latitude.val, longitude.val) == 1){
-        myResponse = '1';
+        myResponse = 1;
     }
 
     if(signInToken)
@@ -124,12 +115,12 @@ char* handleUpdateLocation(char* myArray, PGconn *conn){
 }
 
 char* handleGetFriendLocation(char* myArray, PGconn *conn){
-    int length = strlen(myArray+65);
-    char* signInToken = (char *) (malloc(sizeof(char)*64));
+    int length = strlen(myArray+TOKEN_SIZE+1);
+    char* signInToken = (char *) (malloc(sizeof(char)*TOKEN_SIZE));
     char* friendName = (char*) (malloc(sizeof(char)*length));
     char* myResult = (char *) (malloc(sizeof(char)*9));
-    strncpy(signInToken, myArray + 1, 64);
-    strncpy(friendName, myArray + 65, length);
+    strncpy(signInToken, myArray + 1, TOKEN_SIZE);
+    strncpy(friendName, myArray + TOKEN_SIZE+1, length);
     union
     {
         char bytes[4];
@@ -143,7 +134,6 @@ char* handleGetFriendLocation(char* myArray, PGconn *conn){
     latitude.val = 0;
     longitude.val = 0;
     char myResponse = 0;
-
     char *userEmail = getEmailFromToken(conn, signInToken);
     /* Returns empty string if no email is associated with a token. */
     printf("what's up\n");
@@ -152,15 +142,11 @@ char* handleGetFriendLocation(char* myArray, PGconn *conn){
     } else if (strcmp(userEmail, friendName) == 0){
         myResponse = 1;
     }
-    printf("My email is %s\n", userEmail);
-    printf("My firend's email is %s\n",friendName);
-
     if (getFriendStatus(conn, userEmail, friendName) == IS_FRIEND){
-	printf("YEP WE ARE FRIENDS\n");
         struct Position friendPosition = getPositionFromEmail(conn, friendName);
         latitude.val = friendPosition.lat;
         longitude.val = friendPosition.lon;
-        myResponse = 49;
+        myResponse = 1;
     }
     myResult[0] = myResponse;
     latitude.val=reverseFloat(latitude.val);
@@ -175,133 +161,96 @@ char* handleGetFriendLocation(char* myArray, PGconn *conn){
     return myResult;
 }
 
-//TODO: handleGetFriendRequest
 char* handleGetFriendRequest(PGconn *conn, char* myArray){
     char* signInToken;
     char* result;
     int length;
-    /*CONNOR I haven't done this yet, just write the query for the following:
-     * You are given the signintoken. You must set two variables:
-     * char[] result
-     * int length
-     *
-     * For example if I have 2 friends (Garth and Matt)
-     * result would be Garth\0Matt\0
-     * and length would be 2
-     */
     int myResponse = 0;
-    char* myToken = (char*) (malloc(sizeof(char)*64));
+    char* myToken = (char*) (malloc(sizeof(char)*TOKEN_SIZE));
     int len = strlen(myArray+1);
-    char* friendName = (char*) (malloc(sizeof(char)*(len - 64)));
+    char* friendName = (char*) (malloc(sizeof(char)*(len - TOKEN_SIZE)));
     strncpy(myToken, myArray + 1, TOKEN_SIZE);
-    printf("MY TOKEN IS %.64s\n",myToken);
-
-    /*CONNOR  Search the database for the username with the signin token provided
-     * If friendName is not a friend of user, UPDATE Friend request table, SET myResponse = 1
-     * If the friendName is already a friend of the user, SET MYRESPONSE =  0
-     * If the friendName already has a friend request not accepted, SET MYRESPONSE = 2
-     */
-
     char *userEmail = getEmailFromToken(conn, myToken);
     if (userEmail[0] == '\0'){
         /*invalid token, return empty string */
         return NULL;
     }
-    printf("MY EMAIL IS %s\n",userEmail);
     char* friendList = viewFriendRequests(conn,userEmail);
     union myInt{
 	char bytes[4];
 	int i;
-    }myInt;
+    } myInt;
     int j;
     for(j=0;j<4;j++){
         myInt.bytes[j]=friendList[j];
     }
-    printf("%d\n",myInt.i);
     if (myInt.i == 0){
-        myResponse = 48;
+        myResponse = 0;
     } else {
-        myResponse = 49;
+        myResponse = 1;
     }
 
     char* myReturn = (char*) (malloc(sizeof(char)*200));
     myReturn[0] = myResponse;
     int numNull=0;
     int index=4;
-    printf("STARTING with i of %d\n",myInt.i);
     while(numNull < myInt.i){
      myReturn[index+1]=friendList[index];
-     printf("%c",myReturn[index+1]);
      if(friendList[index] =='\0'){
-         printf("NULL FOUND at index %d\n",index);
 	 numNull++;
      }
 	index++;
     }
-    printf("\nFINISHED\n");
     for(index=1;index<5;index++){
          myReturn[index]=myInt.bytes[4-index];
-    } 
+    }
+    if(friendName)
+	 free(friendName);
+    if(myToken)
+	 free(myToken);
     return myReturn;
 
 }
 
 char* handleSendFriendRequest(char* myArray, PGconn *conn){
     int myResponse = -1;
-    char* myToken = (char*) (malloc(sizeof(char)*64));
+    char* myToken = (char*) (malloc(sizeof(char)*TOKEN_SIZE));
     int len = strlen(myArray+1);
-    char* friendName = (char*) (malloc(sizeof(char)*(len - 64)));
+    char* friendName = (char*) (malloc(sizeof(char)*(len - TOKEN_SIZE)));
 
     strncpy(myToken, myArray + 1, TOKEN_SIZE);
     strncpy(friendName, myArray + TOKEN_SIZE + 1, len - TOKEN_SIZE);
-    printf("MY TOKEN IS %.64s\n",myToken);
-    printf("my friendName is %s\n",friendName);
-    /*CONNOR  Search the database for the username with the signin token provided
-     * If friendName is not a friend of user, UPDATE Friend request table, SET myResponse = 1
-     * If the friendName is already a friend of the user, SET MYRESPONSE =  0
-     * If the friendName already has a friend request not accepted, SET MYRESPONSE = 2
-     */
-
+  
     char *userEmail = getEmailFromToken(conn, myToken);
     if (userEmail[0] == '\0'){
         /*invalid token, return empty string */
         return NULL;
     }
-    printf("MY EMAIL IS %s\n",userEmail);
     int friendStatus = getFriendStatus(conn, userEmail, friendName);
     if (friendStatus == NOT_FRIEND){
         initFriendRequest(conn, userEmail, friendName);
-        myResponse = 49;
+        myResponse = 1;
     } else if (friendStatus == IS_FRIEND){
-        myResponse = 48;
+        myResponse = 0;
     } else if (friendStatus == PEND_FRIEND){
-        myResponse = 50;
+        myResponse = 2;
     } else {
         /* Default case, should not hit */
         return NULL;
     }
-
     char* myReturn = (char*) (malloc(1));
     myReturn[0] = myResponse;
     return myReturn;
 }
 
 char* handleAcceptFriendRequest(char* myArray, PGconn *conn){
-    printf("MYARRAY %s\n",myArray);
     int myResponse;
     char myToken[TOKEN_SIZE];
     int len = strlen(myArray+1);
-    char *friendName = (char*) (malloc(sizeof(char)*len-65));
+    char *friendName = (char*) (malloc(sizeof(char)*len-(TOKEN_SIZE+1)));
     strncpy(myToken, myArray + 1, TOKEN_SIZE);
     printf("LENTH IS %d\n", len);
-    strncpy(friendName, myArray + 64 + 1, len - 63);
-    /* CONNOR Search the database for the username with the signin token provided
-     * If friendName has an active friend request, accept the friend (update table), SET myResponse = 1
-     * If the friendName did not send an active friend request, SET myResponse = 0
-     * If the friendName is already a friend of the user, SET myResponse = 2 (i.e. Don't accept someone who's already your friend)
-     */
-    printf("Token %.64s\n",myToken);
-    printf("friendName %s\n",friendName);
+    strncpy(friendName, myArray + TOKEN_SIZE + 1, len - (TOKEN_SIZE-1));
     char *userEmail = getEmailFromToken(conn, myToken);
     if (userEmail[0] == '\0'){
         /*invalid token, return empty string */
@@ -310,12 +259,12 @@ char* handleAcceptFriendRequest(char* myArray, PGconn *conn){
     int friendStatus = getFriendStatus(conn, userEmail, friendName);
     if (friendStatus == PEND_FRIEND){
         if (acceptFriendRequest(conn, userEmail, friendName)){
-            myResponse = 49;
+            myResponse = 1;
         }
     } else if (friendStatus == NOT_FRIEND){
-        myResponse = 48;
+        myResponse = 0;
     } else if (friendStatus == IS_FRIEND){
-        myResponse = 50;
+        myResponse = 2;
     } else {
         /* Default case, should not hit */
         return NULL;
@@ -330,17 +279,10 @@ char* handleRemoveFriend(char* myArray, PGconn *conn){
     int myResponse;
     char myToken[TOKEN_SIZE];
     int len = strlen(myArray+1);
-    char *friendName = (char*) (malloc(sizeof(char)*len-65));
+    char *friendName = (char*) (malloc(sizeof(char)*len-(TOKEN_SIZE+1)));
     strncpy(myToken, myArray + 1, TOKEN_SIZE);
-    printf("LENTH IS %d\n", len);
-    strncpy(friendName, myArray + 64 + 1, len - 63);
-    /* CONNOR Search the database for the username with the signin token provided
-     * If friendName is a friend of user, REMOVE the friend, SET myResponse = 1
-     * If the friendName is not a friend of the user, or sign-in token validation, SET MYRESPONSE= 0
-     */
+    strncpy(friendName, myArray + TOKEN_SIZE + 1, len - (TOKEN_SIZE-1));
     char *userEmail = getEmailFromToken(conn, myToken);
-    printf("USEREMAIL %s\n", userEmail);
-    printf("REMOVE FRIEND MY FRIEND'S NAME IS %s\n",friendName);
     if (userEmail[0] == '\0'){
         /*invalid token, return empty string */
         return NULL;
@@ -348,10 +290,10 @@ char* handleRemoveFriend(char* myArray, PGconn *conn){
     int friendStatus = getFriendStatus(conn, friendName, userEmail);
     if (friendStatus == IS_FRIEND){
         if (removeFriend(conn, userEmail, friendName)){
-            myResponse = 49;
+            myResponse = 1;
         }
     } else {
-        myResponse = 48;
+        myResponse = 0;
     }
 
     char* myReturn = (char*) (malloc(1));
@@ -425,7 +367,7 @@ float reverseFloat(const float inFloat){
     char *floatToConvert = ( char* ) & inFloat;
     char *returnFloat = ( char* ) & retVal;
 
-    // swap the bytes into a temporary buffer
+    /* swap the bytes into a temporary buffer*/
     returnFloat[0] = floatToConvert[3];
     returnFloat[1] = floatToConvert[2];
     returnFloat[2] = floatToConvert[1];
