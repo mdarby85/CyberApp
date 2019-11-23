@@ -29,8 +29,9 @@ public class Client {
             }
             String c="A";
 	    Menu.displayMenu(myUser);
-            while( !(c=reader.next().toUpperCase(ENGLISH)).equals("H")){
+            while( !(c=reader.next()).equals("H")){
                 try{
+		    System.out.println(c);
                     bytesToSend = Menu.handleOption(c.charAt(0), myUser, reader);
                     out.write(bytesToSend);
                     in.read(bytesReceived,0,Menu.getExpectedReturnSize(c.charAt(0)));

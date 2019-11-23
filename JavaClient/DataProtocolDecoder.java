@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.*;
 public abstract class DataProtocolDecoder {
 
-    private static final byte GOOD_RESPONSE = '1';
+    private static final byte GOOD_RESPONSE = 1;
     private static final byte DELIMITER = (byte)'\0';
 
     public static SignInToken retrieveToken(byte[] token){
