@@ -55,7 +55,6 @@ public abstract class DataProtocolDecoder {
         ByteBuffer buf = ByteBuffer.wrap(friendList);
         ArrayList<String> myList = new ArrayList<>();
         StringBuilder myBuilder = new StringBuilder();
-        System.out.println(Arrays.toString(friendList));
         if(buf.get() == GOOD_RESPONSE){
             int numList = buf.getInt();
             byte c;
