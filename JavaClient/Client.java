@@ -12,6 +12,7 @@ import java.net.Socket;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.Locale;
+import java.net.ConnectException;
 
 public class Client {
     /*Change to match other group's server*/
@@ -58,14 +59,14 @@ public class Client {
                     System.out.println("Invalid Choice, try again.");
                 }
             }
+	    out.close();
+            in.close();
+            s.close();
         } catch (AuthenticationException ex){
             System.out.println(ex.getMessage());
         } catch (ConnectException ex){
 	    System.out.println("Connection to " + SERVERNAME + " at port " + PORT + " could not be found.");
-	}
-        out.close();
-        in.close();
-        s.close();
+	} 
     }
 	
     /**
@@ -88,7 +89,7 @@ public class Client {
             String password = reader.nextLine();
             if(email.length() >= 32 || password.length() <= 1 || password.length() >= 32 ){
                 System.out.println("Invalid email/password input, try again.");
-		System.out.println(MAX_TRIES - numTries " attempts remaining");
+		System.out.println(MAX_TRIES - numTries + " attempts remaining");
 		    numTries++;
             }
             else {
@@ -103,7 +104,7 @@ public class Client {
                     myUser.setAuhenticated(true);
                 } else {
                     System.out.println("Invalid Username/Password Pair, try again");
-                    System.out.println(MAX_TRIES - numTries " attempts remaining");
+                    System.out.println(MAX_TRIES - numTries +" attempts remaining");
 		    numTries++;
                 }
             }
