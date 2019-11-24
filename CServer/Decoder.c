@@ -1,3 +1,8 @@
+/*
+* filename:Decoder.c
+* author: group2
+* Date Last modified: 11/23/19
+*/
 #include <time.h>
 #include "Decoder.h"
 #include "Database.h"
@@ -14,6 +19,12 @@ char CODE_EXIT = 8;
 static int TOKEN_SIZE = 64;
 static int PASSWORD_HASHSIZE=32;
 
+/*
+ * Checks if a user can be authenticated
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleSignIn(char* myArray, PGconn *conn) {
     int len = strlen(myArray+1);
     char *myUserName = (char *) malloc(sizeof(char) * len);
@@ -47,6 +58,12 @@ char* handleSignIn(char* myArray, PGconn *conn) {
     return serverResponse;
 }
 
+/*
+ * Gets the location of a user
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleGetLocation(char* myArray, PGconn *conn){
     char* signInToken = (char *) (malloc(sizeof(char)*(TOKEN_SIZE+1)));
     char* myResult = (char *) (malloc(sizeof(char)*9));
@@ -79,6 +96,12 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     return myResult;
 }
 
+/*
+ * Updates the location of a user to the database
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleUpdateLocation(char* myArray, PGconn *conn){
     char* signInToken = (char *) (malloc(sizeof(char)*TOKEN_SIZE));
     union
@@ -113,6 +136,12 @@ char* handleUpdateLocation(char* myArray, PGconn *conn){
     return myReturn;
 }
 
+/*
+ * Gets the location a friend
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleGetFriendLocation(char* myArray, PGconn *conn){
     int length = strlen(myArray+TOKEN_SIZE+1);
     char* signInToken = (char *) (malloc(sizeof(char)*TOKEN_SIZE));
@@ -160,6 +189,12 @@ char* handleGetFriendLocation(char* myArray, PGconn *conn){
     return myResult;
 }
 
+/*
+ * Gets all friend requests
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleGetFriendRequest(PGconn *conn, char* myArray){
     char* signInToken;
     char* result;
@@ -208,9 +243,14 @@ char* handleGetFriendRequest(PGconn *conn, char* myArray){
     if(myToken)
 	 free(myToken);
     return myReturn;
-
 }
 
+/*
+ * Send a friend request
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleSendFriendRequest(char* myArray, PGconn *conn){
     int myResponse = -1;
     char* myToken = (char*) (malloc(sizeof(char)*TOKEN_SIZE));
@@ -242,6 +282,12 @@ char* handleSendFriendRequest(char* myArray, PGconn *conn){
     return myReturn;
 }
 
+/*
+ * Accept a friend request
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleAcceptFriendRequest(char* myArray, PGconn *conn){
     int myResponse;
     char myToken[TOKEN_SIZE];
@@ -274,6 +320,12 @@ char* handleAcceptFriendRequest(char* myArray, PGconn *conn){
     return myReturn;
 }
 
+/*
+ * Remove a friend
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleRemoveFriend(char* myArray, PGconn *conn){
     int myResponse;
     char myToken[TOKEN_SIZE];
@@ -300,11 +352,14 @@ char* handleRemoveFriend(char* myArray, PGconn *conn){
     return myReturn;
 }
 
+/*
+ * Handle options based on the first byte of the client response
+ * param: Encoded Message
+ * param: Connection to database
+ * return: Server Response
+ */
 char* handleOptions(char* myArray, PGconn *conn){
-    printf("handling options\n");
-    printf("%.10s\n",myArray);
     char option = myArray[0];
-    printf("OPTION SELECTED WAS %d\n",option);
     char* myReturn;
     if(option == CODE_SIGN_IN)
         myReturn = handleSignIn(myArray, conn);
@@ -326,6 +381,11 @@ char* handleOptions(char* myArray, PGconn *conn){
 
 }
 
+/*
+ * Find the mapping of code to expected response length
+ * param: Encoded Message
+ * return: The expected length of the response
+ */
 int findResponseLength(char* myArray){
     char option = myArray[0];
     int myReturn;
@@ -348,6 +408,11 @@ int findResponseLength(char* myArray){
     return myReturn;
 }
 
+/*
+ * Generates a random token
+ * param: length of the token
+ * return: Random String of the token
+ */
 char* generateToken(int length){
     srand(time(0));
     static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#?!";
@@ -364,10 +429,15 @@ char* generateToken(int length){
     return randomString;
 }
 
+/*
+ * Reverse the float (C-Java encoding)
+ * param: float to be reversed
+ * return: Reversed Float
+ */
 float reverseFloat(const float inFloat){
     float retVal;
-    char *floatToConvert = ( char* ) & inFloat;
-    char *returnFloat = ( char* ) & retVal;
+    char *floatToConvert = (char*) & inFloat;
+    char *returnFloat = (char*) & retVal;
 
     /* swap the bytes into a temporary buffer*/
     returnFloat[0] = floatToConvert[3];
