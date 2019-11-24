@@ -35,7 +35,6 @@ char* handleSignIn(char* myArray, PGconn *conn) {
     myHashedPassword[PASSWORD_HASHSIZE]='\0';
     char query[500 + sizeof(myUserName) + sizeof(myHashedPassword) + TOKEN_SIZE];
     snprintf(query, sizeof(query), "SELECT * FROM people WHERE email = '%s' AND pwhash = '%.32s'", myUserName, myHashedPassword);
-    printf("%s\n",query);
     /* Is the number of rows returned > 0? */
     myResponse = (processQuery(conn, query) == 0 ? 0 : 1);
     char *serverResponse = (char *) malloc(sizeof(char) * (TOKEN_SIZE+1));
@@ -54,7 +53,6 @@ char* handleSignIn(char* myArray, PGconn *conn) {
         free(myUserName);
     if(myHashedPassword)
         free(myHashedPassword);
-    printf("MY SERVER RESPONSE is %c\n",serverResponse);
     return serverResponse;
 }
 
@@ -69,8 +67,7 @@ char* handleGetLocation(char* myArray, PGconn *conn){
     char* myResult = (char *) (malloc(sizeof(char)*9));
     strncpy(signInToken, myArray + 1, TOKEN_SIZE);
     signInToken[TOKEN_SIZE] = '\0';
-    printf("o\n");
-    printf("Hello %s\n", signInToken);
+
     char myResponse = 1;
     union
     {
@@ -164,7 +161,6 @@ char* handleGetFriendLocation(char* myArray, PGconn *conn){
     char myResponse = 0;
     char *userEmail = getEmailFromToken(conn, signInToken);
     /* Returns empty string if no email is associated with a token. */
-    printf("what's up\n");
     if (userEmail[0] == '\0'){
         return userEmail;
     } else if (strcmp(userEmail, friendName) == 0){
@@ -294,7 +290,6 @@ char* handleAcceptFriendRequest(char* myArray, PGconn *conn){
     int len = strlen(myArray+1);
     char *friendName = (char*) (malloc(sizeof(char)*len-(TOKEN_SIZE+1)));
     strncpy(myToken, myArray + 1, TOKEN_SIZE);
-    printf("LENTH IS %d\n", len);
     strncpy(friendName, myArray + TOKEN_SIZE + 1, len - (TOKEN_SIZE-1));
     char *userEmail = getEmailFromToken(conn, myToken);
     if (userEmail[0] == '\0'){
