@@ -1,3 +1,8 @@
+/*
+* filename:Decoder.h
+* author: group2
+* Date Last modified: 11/23/19
+*/
 #ifndef GROUP_PROJECT_DECODER_H
 #define GROUP_PROJECT_DECODER_H
 
