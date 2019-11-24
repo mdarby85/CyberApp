@@ -147,7 +147,6 @@ int updateLocation(PGconn *conn, const char *token, const float lat, const float
     if (email[0] == '\0'){
         return success;
     }
-    printf("UPDATING LAT TO %f\n",lat);
     PGresult *res;
     snprintf(query, sizeof(query), "INSERT INTO position (email, lat, long) VALUES ('%s', %f, %f) ON CONFLICT (email) DO UPDATE SET lat = %f, long = %f;", email, lat, lon, lat, lon);
     if ((res = PQexec(conn, query)) == NULL){
@@ -176,7 +175,6 @@ int updateLocation(PGconn *conn, const char *token, const float lat, const float
  */
  char* getEmailFromToken(PGconn *conn, const char* token){
     char query[100 + 64];
-    printf("My Token is %.64s\n", token); 
     snprintf(query, sizeof(query), "SELECT email FROM people WHERE signintoken = '%.64s';", token);
     static char email[100] = {0};
 
@@ -366,7 +364,6 @@ int removeFriend(PGconn *conn, const char *userEmail, const char *friendEmail){
 
     PGresult *res;
     snprintf(query, sizeof(query), "DELETE FROM knownpeople WHERE email = '%s' AND friendemail = '%s';", friendEmail, userEmail);
-    printf("%s\n",query);
     if ((res = PQexec(conn, query)) == NULL){
         printf("%s\n", PQerrorMessage(conn));
         PQclear(res);
