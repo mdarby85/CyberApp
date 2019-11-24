@@ -1,3 +1,8 @@
+/*
+* filename:Database.h
+* author: group2
+* Date Last modified: 11/23/19
+*/
 #ifndef GROUP_PROJECT_DATABASE_H
 #define GROUP_PROJECT_DATABASE_H
 
@@ -24,6 +29,5 @@ int initFriendRequest(PGconn *conn, const char *userEmail, const char *friendEma
 int acceptFriendRequest(PGconn *conn, const char *userEmail, const char *friendEmail);
 int removeFriend(PGconn *conn, const char *userEmail, const char *friendEmail);
 char* viewFriendRequests(PGconn *conn, const char *userEmail);
-
 
 #endif //GROUP_PROJECT_DATABASE_H
