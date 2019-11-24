@@ -1,6 +1,11 @@
+/**
+ * file: Menu.java
+ * author: Group 2 
+ * Date Modified: 11/23/19
+ * This program is the menu for MapZest
+ */
 package client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -17,6 +22,10 @@ public class Menu {
     private static final byte FRIEND_ACCEPT = 'F';
     private static final byte FRIEND_REMOVE = 'G';
 
+    /**
+     * Displays a menu for MapZest
+     * @param u - The autheniticated user
+     */
     public static void displayMenu(User u){
         System.out.println("\nEnter an option, "+ u.getEmail());
         System.out.println("A) Get my current location");
@@ -29,6 +38,15 @@ public class Menu {
         System.out.println("H) Close App");
     }
 
+    /**
+     * Handles an option and returns an encoded message to be sent to the server
+     * @param c The option selected
+     * @param user The authenticated user
+     * @param reader The scanner to get results
+     * @return The encoded message
+     * @throws IOException
+     * @throws IllegalArgumentException
+     */
     public static byte[] handleOption(char c, User user, Scanner reader) throws IOException, IllegalArgumentException {
         if(c == LOC_GET){
             return DataProtocolEncoder.getLocation(user);
@@ -66,6 +84,12 @@ public class Menu {
         }
     }
 
+    /**
+     * Takes a response from the server and reacts accordingly
+     * @param c The option selected
+     * @param user The authenticated User
+     * @param serverResponse The byte message from the Server
+     */
     public static void handleResponse(char c, User user, byte[] serverResponse){
         byte myResponse = DataProtocolDecoder.getResponse(serverResponse);
         if(c == LOC_GET){
@@ -82,40 +106,40 @@ public class Menu {
             else
                 System.out.println("\nError, invalid location");
         } else if( c == LOC_FRIEND){
-                if(myResponse == 1){
-                    Location location = DataProtocolDecoder.retrieveLocation(serverResponse);
-                    System.out.println("\nYour friend is at "+ location.getLattitude()+", " + location.getLongitude());
-                }
-		else{
-		    System.out.println("\nFriend not found, or you are not friends with this person");
-		}
+            if(myResponse == 1){
+                Location location = DataProtocolDecoder.retrieveLocation(serverResponse);
+                System.out.println("\nYour friend is at "+ location.getLattitude()+", " + location.getLongitude());
+            }
+            else{
+                System.out.println("\nFriend not found, or you are not friends with this person");
+            }
         } else if( c == FRIEND_GET){
             if(myResponse==1){
-		    System.out.println("\nYou have friend requests from: ");
+                System.out.println("\nYou have friend requests from: ");
                 ArrayList<String> myFriends = DataProtocolDecoder.getFriends(serverResponse);
                 for(String f : myFriends){
                     System.out.println(f);
                 }
             }
-	    else{
-	       System.out.println("\nNo active friend requests!");
-	    }
+            else{
+                System.out.println("\nNo active friend requests!");
+            }
         } else if( c == FRIEND_SEND){
             if(myResponse == 1){
                 System.out.println("\nFriend Request Sent!");
             }else if(myResponse == 2){
                 System.out.println("\nThe name you entered is already your friend!");
             }else{
-	        System.out.println("\nUser not found!");
-	    }
+                System.out.println("\nUser not found!");
+            }
         } else if( c == FRIEND_ACCEPT){
             if(myResponse == 1){
                 System.out.println("\nAccepted!");
             }else if(myResponse == 2){
                 System.out.println("\nThe name you entered is already your friend!");
             }else{
-	        System.out.println("\nUser not found, or has not sent you a friend request!");
-	    }
+                System.out.println("\nUser not found, or has not sent you a friend request!");
+            }
         } else if( c == FRIEND_REMOVE){
             if(myResponse == 1){
                 System.out.println("\nFriend Removed!");
@@ -126,6 +150,12 @@ public class Menu {
             throw new UnsupportedOperationException();
         }
     }
+
+    /**
+     * Converts an option to expected return size
+     * @param c The option selected
+     * @return The expected return size
+     */
     public static int getExpectedReturnSize(char c){
         if(c == LOC_GET){
             return 9;
