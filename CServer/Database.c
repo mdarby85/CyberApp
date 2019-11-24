@@ -1,6 +1,16 @@
+/*
+* filename:Database.c
+* author: group2
+* Date Last modified: 11/23/19
+*/
 #include <stdlib.h>
 #include "Database.h"
 
+/*
+* This function connects to the database
+* param: the Connection Info to connect properly
+* return: A connection variable to the database
+*/
 PGconn* connectToDB(const char *conninfo){
     PGconn *conn = PQconnectdb(conninfo);
     /* Check to see that the backend connection was successfully made */
@@ -14,11 +24,18 @@ PGconn* connectToDB(const char *conninfo){
     }
 }
 
+/* Closes the database*/
 void closeDBConnection(PGconn *conn){
     PQfinish(conn);
     printf("Database Connection Closed\n");
 }
 
+/*
+ * Process a given query
+ * param: The connection to the database
+ * param: The query to be executed
+ * return: 1 on success, 0 otherwise
+ */
 int processQuery(PGconn *conn, const char *query){
 	PGresult *res;
     if ((res = PQexec(conn, query)) == NULL){
@@ -34,14 +51,18 @@ int processQuery(PGconn *conn, const char *query){
         printf("%s\n", PQresStatus(PQresultStatus(res)));
         printf("%s\n", PQresultErrorMessage(res));
     }
-
     int found_result = PQntuples(res);
     PQclear(res);
     return (found_result > 0 ? 1 : 0);
 }
 
+/*
+ * Finds a postion of a user
+ * param: The connection to the database
+ * param: The token to be compared
+ * return: Position associated with token
+ */
 struct Position getPositionFromToken(PGconn *conn, const char *token){
-
     struct Position temp;
     temp.lat = 0;
     temp.lon = 0;
@@ -73,6 +94,12 @@ struct Position getPositionFromToken(PGconn *conn, const char *token){
     return temp;
 }
 
+/*
+ * Finds a postion associated with an email
+ * param: The connection to the database
+ * param: The email to be compared
+ * return: Position associated with email
+ */
 struct Position getPositionFromEmail(PGconn *conn, const char *email){
     struct Position temp;
     temp.lat = 0;
@@ -105,6 +132,14 @@ struct Position getPositionFromEmail(PGconn *conn, const char *email){
     return temp;
 }
 
+/*
+ * Updates the location to a specific lat,ong
+ * param: The connection to the database
+ * param: The token of the authenticated user
+ * param: The latitude to be updated
+ * param: The longitude to be updated
+ * return: 1 if success, 0 otherwise
+ */
 int updateLocation(PGconn *conn, const char *token, const float lat, const float lon){
     int success = 0;
     char query[400 + 64];
@@ -132,8 +167,14 @@ int updateLocation(PGconn *conn, const char *token, const float lat, const float
     return success;
 }
 
-/* If no email was found, function returns empty char* -> "\0" */
-char* getEmailFromToken(PGconn *conn, const char* token){
+/*
+ * Finds a email associated with a token
+ * param: The connection to the database
+ * param: The token to be compared
+ * return: Email associated with a token
+   If no email was found, function returns empty char* -> "\0" 
+ */
+ char* getEmailFromToken(PGconn *conn, const char* token){
     char query[100 + 64];
     printf("My Token is %.64s\n", token); 
     snprintf(query, sizeof(query), "SELECT email FROM people WHERE signintoken = '%.64s';", token);
@@ -161,6 +202,12 @@ char* getEmailFromToken(PGconn *conn, const char* token){
     return email;
 }
 
+/*
+ * Finds all friend requests associated with an email
+ * param: The connection to the database
+ * param: The email to be compared
+ * return: Friend Requests associated with email
+ */
 char* viewFriendRequests(PGconn *conn, const char *userEmail){
     char query[164];
     snprintf(query, sizeof(query), "SELECT * FROM knownpeople WHERE status = 1 AND friendemail = '%s';", userEmail);
@@ -206,8 +253,15 @@ char* viewFriendRequests(PGconn *conn, const char *userEmail){
     }
     PQclear(res);
     return myFriends;
-
 }
+
+/*
+ * Finds the friend status associated with user,friend
+ * param: The connection to the database
+ * param: The email to be compared (user)
+ * param: The email to be compared (friend)
+ * return: Friend Status
+ */
 int getFriendStatus(PGconn *conn, const char *userEmail, const char *friendEmail){
     int friendStatus = -1;
     char query[100 + sizeof(userEmail) + sizeof(friendEmail)];
@@ -238,12 +292,17 @@ int getFriendStatus(PGconn *conn, const char *userEmail, const char *friendEmail
     return friendStatus;
 }
 
+/*
+ * Initiates a friend request between friends
+ * param: The connection to the database
+ * param: The email to be compared (user)
+ * param: The email to be compared (friend)
+ * return: Friend Status
+ */
 int initFriendRequest(PGconn *conn, const char *userEmail, const char *friendEmail){
     int success = 0;
     char query[100 + sizeof(userEmail) + sizeof(friendEmail)];
     PGresult *res;
-    printf("EMAIL IS %s\n",userEmail);
-    printf("Femail is %s\n",friendEmail);
     snprintf(query, sizeof(query), "INSERT INTO knownpeople (email, friendemail, status) VALUES ('%s', '%s', %i);", userEmail, friendEmail, PEND_FRIEND);
     if ((res = PQexec(conn, query)) == NULL){
         printf("%s\n", PQerrorMessage(conn));
@@ -263,6 +322,13 @@ int initFriendRequest(PGconn *conn, const char *userEmail, const char *friendEma
 
 }
 
+/*
+ * Accepts a friend request between friends
+ * param: The connection to the database
+ * param: The email to be compared (user)
+ * param: The email to be compared (friend)
+ * return: Friend Status
+ */
 int acceptFriendRequest(PGconn *conn, const char *userEmail, const char *friendEmail){
     int success = 0;
     char query[200 + sizeof(userEmail) + sizeof(friendEmail)];
@@ -287,6 +353,13 @@ int acceptFriendRequest(PGconn *conn, const char *userEmail, const char *friendE
     return success;
 }
 
+/*
+ * Removes a friend
+ * param: The connection to the database
+ * param: The email to be compared (user)
+ * param: The email to be compared (friend)
+ * return: Friend Status
+ */
 int removeFriend(PGconn *conn, const char *userEmail, const char *friendEmail){
     int success = 0;
     char query[100 + sizeof(userEmail) + sizeof(friendEmail)];
@@ -311,6 +384,7 @@ int removeFriend(PGconn *conn, const char *userEmail, const char *friendEmail){
     return success;
 }
 
+/*Prints the Query*/
 void printQuery(PGresult *res){
     PQprintOpt opt = {0};
     opt.header = 1;
