@@ -1,6 +1,6 @@
 from webob import Request, Response
 import hashlib
-from wsgiref.simple_server import make_server
+# from wsgiref.simple_server import make_server
 
 
 # Main class and functions where we define everything
