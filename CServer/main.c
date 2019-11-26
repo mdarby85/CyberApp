@@ -19,7 +19,16 @@
 #define MAX 800
 #define PORT 12348
 
+struct ConnectionInfo {
+    char database[500];
+    char user[500];
+    char password[500];
+    char host[500];
+    char port[500];
+};
+
 void *connection_handler(void *);
+void getDBConnectionInfo(char *connectionstr);
 
 int main(int argc , char *argv[])
 {
@@ -76,7 +85,10 @@ int main(int argc , char *argv[])
 void *connection_handler(void *socket_desc)
 {
     /* Database Variables */
-    const char *conninfo = "user=postgres password=postgres dbname = cyberdb";
+    char connectionStr[1000];
+    getDBConnectionInfo(connectionStr);
+
+    const char *conninfo = connectionStr;
     PGconn *conn = connectToDB(conninfo);
 
     /*Get the socket descriptor*/
@@ -101,4 +113,113 @@ void *connection_handler(void *socket_desc)
 		
     free(socket_desc);
     return 0;
+}
+
+void getDBConnectionInfo(char *connectionstr){
+    struct ConnectionInfo connectionInfo;
+    /* Get parent folder and append DBInfo folder to path */
+    char cwd[4096];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        char* ptr = strrchr(cwd, '/');
+        *(ptr + 1) = '\0';
+        strncat(cwd,"DBInfo/",100);
+    } else {
+        perror("getcwd() error");
+    }
+
+    /* Open and read secret file */
+    strncat(cwd, "secret.txt", 20);
+    FILE *fp;
+    fp = fopen(cwd, "r");
+    if (fp == NULL){
+        printf("Could not open secrets file! %s", cwd);
+    } else {
+        char line[500];
+
+        /* Get DB Name */
+        {
+            fgets(line, sizeof(line), fp);
+            char *ptr = strrchr(line, ':');
+            strncpy(connectionInfo.database, ptr + 1,
+                    sizeof(connectionInfo.database));
+            for (int i = 0; i < strlen(connectionInfo.database); i++) {
+                if (connectionInfo.database[i] == '\r' ||
+                    connectionInfo.database[i] == '\n') {
+                    connectionInfo.database[i] = '\0';
+                }
+            }
+        }
+
+        /* Get User */
+        {
+            fgets(line, sizeof(line), fp);
+            char *ptr = strrchr(line, ':');
+            strncpy(connectionInfo.user, ptr + 1,
+                    sizeof(connectionInfo.user));
+            for (int i = 0; i < strlen(connectionInfo.user); i++) {
+                if (connectionInfo.user[i] == '\r' ||
+                    connectionInfo.user[i] == '\n') {
+                    connectionInfo.user[i] = '\0';
+                }
+            }
+        }
+        /* Get Password */
+        {
+            fgets(line, sizeof(line), fp);
+            char *ptr = strrchr(line, ':');
+            strncpy(connectionInfo.password, ptr + 1,
+                    sizeof(connectionInfo.password));
+            for (int i = 0; i < strlen(connectionInfo.password); i++) {
+                if (connectionInfo.password[i] == '\r' ||
+                    connectionInfo.password[i] == '\n') {
+                    connectionInfo.password[i] = '\0';
+                }
+            }
+        }
+
+        /* Get Host */
+        {
+            fgets(line, sizeof(line), fp);
+            char *ptr = strrchr(line, ':');
+            strncpy(connectionInfo.host, ptr + 1,
+                    sizeof(connectionInfo.host));
+            for (int i = 0; i < strlen(connectionInfo.host); i++) {
+                if (connectionInfo.host[i] == '\r' ||
+                    connectionInfo.host[i] == '\n') {
+                    connectionInfo.host[i] = '\0';
+                }
+            }
+        }
+
+        /* Get Port */
+        {
+            fgets(line, sizeof(line), fp);
+            char *ptr = strrchr(line, ':');
+            strncpy(connectionInfo.port, ptr + 1,
+                    sizeof(connectionInfo.port));
+            for (int i = 0; i < strlen(connectionInfo.port); i++) {
+                if (connectionInfo.port[i] == '\r' ||
+                    connectionInfo.port[i] == '\n') {
+                    connectionInfo.port[i] = '\0';
+                }
+            }
+        }
+
+        /* Build Connection String */
+        strncpy(connectionstr, "dbname=", 7);
+        strncat(connectionstr, connectionInfo.database, strlen(connectionInfo.database));
+
+        strncat(connectionstr, " user=", 6);
+        strncat(connectionstr, connectionInfo.user, strlen(connectionInfo.user));
+
+        strncat(connectionstr, " password=", 10);
+        strncat(connectionstr, connectionInfo.password, strlen(connectionInfo.password));
+
+        strncat(connectionstr, " host=", 6);
+        strncat(connectionstr, connectionInfo.host, strlen(connectionInfo.host));
+
+        strncat(connectionstr, " port=", 6);
+        strncat(connectionstr, connectionInfo.port, strlen(connectionInfo.port));
+    }
+    fclose(fp);
 }
