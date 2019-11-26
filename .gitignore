@@ -1,2 +1,4 @@
 # Do not push these files and folders
 .vscode/
+.idea/
+DBInfo/

@@ -9,8 +9,31 @@ from wsgiref.simple_server import make_server
 application = API()
 
 # Open db conn
+connectionInfo = {
+    "database": "",
+    "user": "",
+    "password": "",
+    "host": "",
+    "port": ""
+}
+
+
+def getDBConnectionInfo():
+    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'DBInfo')) + '\\secret.txt', "r") as file:
+        connectionInfo["database"] = file.readline().rsplit(':')[1].split("\n")[0]
+        connectionInfo["user"] = file.readline().rsplit(':')[1].split("\n")[0]
+        connectionInfo["password"] = file.readline().rsplit(':')[1].split("\n")[0]
+        connectionInfo["host"] = file.readline().rsplit(':')[1].split("\n")[0]
+        connectionInfo["port"] = file.readline().rsplit(':')[1].split("\n")[0]
+
+
 try:
-    conn = psycopg2.connect(database="cyberdb", user="postgres", password="postgres", host="localhost", port=5432)
+    getDBConnectionInfo()
+    conn = psycopg2.connect(database=connectionInfo["database"],
+                            user=connectionInfo["user"],
+                            password=connectionInfo["password"],
+                            host=connectionInfo["host"],
+                            port=connectionInfo["port"])
     conn.autocommit = True
 except:
     print("Cannot connect to the database!")
