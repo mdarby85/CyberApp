@@ -49,7 +49,8 @@ public class User {
         for (int i = 0; i < 32; ++i) {
             sb.append(Integer.toHexString((digest[i] & 0xFF) | 0x100).substring(1, 3));
         }
-        this.passwordHash = sb.toString();
+	System.out.println("My password is " + sb.toString());
+        this.passwordHash = sb.toString().substring(0,32);
     }
 
     /**

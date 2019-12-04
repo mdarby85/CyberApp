@@ -37,6 +37,7 @@ public abstract class DataProtocolEncoder {
         out.write(CODE_SIGN_IN);
         out.write(myUser.getEmail().getBytes(ENC));
         out.write(DELIMITER);
+	System.out.println(myUser.getPassword());
         out.write(myUser.getPassword().getBytes(ENC));
         return out.toByteArray();
     }
