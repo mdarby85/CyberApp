@@ -3,7 +3,7 @@ import os
 import hashlib
 import psycopg2
 from webob import Request
-from wsgiref.simple_server import make_server
+#from wsgiref.simple_server import make_server
 
 # Main file that runs the entire application
 application = API()
@@ -19,7 +19,7 @@ connectionInfo = {
 
 
 def getDBConnectionInfo():
-    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'DBInfo')) + '\\secret.txt', "r") as file:
+    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'DBInfo')) + '/secret.txt', "r") as file:
         connectionInfo["database"] = file.readline().rsplit(':')[1].split("\n")[0]
         connectionInfo["user"] = file.readline().rsplit(':')[1].split("\n")[0]
         connectionInfo["password"] = file.readline().rsplit(':')[1].split("\n")[0]
@@ -29,14 +29,24 @@ def getDBConnectionInfo():
 
 try:
     getDBConnectionInfo()
-    conn = psycopg2.connect(database=connectionInfo["database"],
-                            user=connectionInfo["user"],
-                            password=connectionInfo["password"],
-                            host=connectionInfo["host"],
-                            port=connectionInfo["port"])
+    conn = psycopg2.connect(
+                            database="cyberdb",
+                            user="postgres",
+                            password="supersecretdbpassword1!"
+
+                            #database=connectionInfo["database"],
+                            #user=connectionInfo["user"],
+                            #password=connectionInfo["password"],
+                            #host=connectionInfo["host"],
+                            #port=connectionInfo["port"]
+                           )
     conn.autocommit = True
-except:
+except psycopg2.Error as e:
     print("Cannot connect to the database!")
+    print(connectionInfo)
+    print(e)
+    print(e.pgcode)
+    print(e.pgerror)
     exit(1)
 
 # Route for '/' path
@@ -127,9 +137,9 @@ def register(request, response):
         print("Blank Username or Password on Register")
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
     # Test server for running the Python code
-    httpd = make_server('localhost', 8000, application)
-    print("Serving on port 8000...\nVisit http://127.0.0.1:8000\nTo kill the server we enter 'control + c'")
+    #httpd = make_server('localhost', 8000, application)
+    #print("Serving on port 8000...\nVisit http://127.0.0.1:8000\nTo kill the server we enter 'control + c'")
     # Wait for a single request, serve it and quit
-    httpd.serve_forever()
+    #httpd.serve_forever()
