@@ -3,7 +3,11 @@ import os
 import hashlib
 import psycopg2
 from webob import Request
-#from wsgiref.simple_server import make_server
+# from wsgiref.simple_server import make_server
+
+NOT_FRIEND = 0
+PEND_FRIEND = 1
+IS_FRIEND = 2
 
 # Main file that runs the entire application
 application = API()
@@ -30,15 +34,15 @@ def getDBConnectionInfo():
 try:
     getDBConnectionInfo()
     conn = psycopg2.connect(
-                            database="cyberdb",
-                            user="postgres",
-                            password="supersecretdbpassword1!"
+                            # database="cyberdb",
+                            # user="postgres",
+                            # password="supersecretdbpassword1!"
 
-                            #database=connectionInfo["database"],
-                            #user=connectionInfo["user"],
-                            #password=connectionInfo["password"],
-                            #host=connectionInfo["host"],
-                            #port=connectionInfo["port"]
+                            database=connectionInfo["database"],
+                            user=connectionInfo["user"],
+                            password=connectionInfo["password"],
+                            host=connectionInfo["host"],
+                            port=connectionInfo["port"]
                            )
     conn.autocommit = True
 except psycopg2.Error as e:
@@ -69,7 +73,7 @@ def home(request, response):
                 cursor.execute(query)
                 if cursor.rowcount > 0:
                     print("Username and Password match!")
-                    success(request, response)
+                    success(request, response, username)
                 else:
                     print("Invalid Username or Password!")
                     loginerror(response)
@@ -105,9 +109,14 @@ def registersuccess(response):
 
 # Route for '/success' path
 @application.route("/success")  # Flask-style annotation
-def success(request, response):
+def success(request, response, useremail):
+    pendingfriends = htmlFriendsTable(useremail, PEND_FRIEND)
+    friends = htmlFriendsTable(useremail, IS_FRIEND)
     response.text = open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
-                         + '/success.html').read()
+                         + '/success.html').read().format(user=useremail,
+                                                          pending=pendingfriends,
+                                                          friends=friends,
+                                                          location=getPosition(useremail))
 
 # Route for '/register' path
 @application.route("/register")  # Flask-style annotation
@@ -137,9 +146,41 @@ def register(request, response):
         print("Blank Username or Password on Register")
 
 
-#if __name__ == "__main__":
-    # Test server for running the Python code
-    #httpd = make_server('localhost', 8000, application)
-    #print("Serving on port 8000...\nVisit http://127.0.0.1:8000\nTo kill the server we enter 'control + c'")
-    # Wait for a single request, serve it and quit
-    #httpd.serve_forever()
+def htmlFriendsTable(useremail, friendstatus):
+    query = "SELECT friendemail FROM knownpeople WHERE email='{}' AND status={}".format(useremail, friendstatus)
+    fullStr = "<table border=\"1\"><tr>"
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            colnames = [desc[0] for desc in cursor.description]
+            fullStr += ''.join("<th>{}</th>".format(x) for x in colnames)
+            fullStr += "</tr>"
+            for record in cursor:
+                fullStr += "<tr>"
+                fullStr += ''.join("<td>{}</td>".format(x) for x in record)
+                fullStr += "</tr>"
+    except psycopg2.Error as e:
+        print(e.pgerror)
+    fullStr += "<table>"
+    return fullStr
+
+
+def getPosition(useremail):
+    query = "SELECT lat, long FROM position WHERE email='{}'".format(useremail)
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            location = cursor.fetchone()
+            if location is None:
+                return "No Location Exists for user: {}".format(useremail)
+    except psycopg2.Error as e:
+        print(e.pgerror)
+    return "[Latitude: {}] [Longitude: {}]".format(location[0], location[1])
+
+
+# if __name__ == "__main__":
+#     # Test server for running the Python code
+#     httpd = make_server('localhost', 8000, application)
+#     print("Serving on port 8000...\nVisit http://127.0.0.1:8000\nTo kill the server we enter 'control + c'")
+#     # Wait for a single request, serve it and quit
+#     httpd.serve_forever()
