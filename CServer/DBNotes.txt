@@ -57,3 +57,7 @@ CREATE DATABASE cyberdb
 connect to db: \c cyberdb
 list tables in database: \dt
 list columns in table: \d table_name
+
+
+COMPILE STRING: 
+gcc -I/usr/pgsql-12/include -L/usr/pgsql-12/lib -lpq -lpthread *.c

@@ -88,7 +88,7 @@ void *connection_handler(void *socket_desc)
     char connectionStr[1000];
     getDBConnectionInfo(connectionStr);
 
-    const char *conninfo = connectionStr;
+    const char *conninfo = "user=postgres password=supersecretdbpassword1! dbname=cyberdb";
     PGconn *conn = connectToDB(conninfo);
 
     /*Get the socket descriptor*/

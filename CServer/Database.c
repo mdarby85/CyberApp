@@ -38,14 +38,22 @@ void closeDBConnection(PGconn *conn){
  */
 int processQuery(PGconn *conn, const char *query){
 	PGresult *res;
-    if ((res = PQexec(conn, query)) == NULL){
+	    char *query2 = "SELECT * FROM people WHERE email = 'garth' AND pwhash = 'ca2f2069ea0c6e4658222e06f8dd6396'";
+    	    printf("%s\n",query);
+	    printf("%s\n",query2);
+	    printf("%d\n",strlen(query));
+ printf("%d\n",strlen(query2));
+
+	    printf("%d\n", strcmp(query,query2));
+
+	    if ((res = PQexec(conn, query)) == NULL){
         printf("%s\n", PQerrorMessage(conn));
         PQclear(res);
         return 0;
     }
     if ((PQresultStatus(res) == PGRES_COMMAND_OK) ||
         (PQresultStatus(res) == PGRES_TUPLES_OK)){
-
+	printf("q: %s\n",query);
         printQuery(res);
     } else {
         printf("%s\n", PQresStatus(PQresultStatus(res)));

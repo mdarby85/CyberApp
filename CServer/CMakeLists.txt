@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD 11)
 
 # sudo apt-get install postgresql-12
 # sudo apt-get install libpq-dev postgresql-server-dev-all
-include_directories(/usr/include/postgresql)
+include_directories(/usr/pgsql-12/)
 link_libraries(-lpq)
 
 

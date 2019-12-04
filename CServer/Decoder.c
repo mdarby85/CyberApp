@@ -34,7 +34,11 @@ char* handleSignIn(char* myArray, PGconn *conn) {
     char myResponse = 1;
     myHashedPassword[PASSWORD_HASHSIZE]='\0';
     char query[500 + sizeof(myUserName) + sizeof(myHashedPassword) + TOKEN_SIZE];
+    myUserName[len]='\0';
+    printf("\n%s\n",myHashedPassword);
     snprintf(query, sizeof(query), "SELECT * FROM people WHERE email = '%s' AND pwhash = '%.32s'", myUserName, myHashedPassword);
+    printf("%s\n",query);
+    query[strlen(query)]='\0';
     /* Is the number of rows returned > 0? */
     myResponse = (processQuery(conn, query) == 0 ? 0 : 1);
     char *serverResponse = (char *) malloc(sizeof(char) * (TOKEN_SIZE+1));
