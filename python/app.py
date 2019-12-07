@@ -34,10 +34,6 @@ def getDBConnectionInfo():
 try:
     getDBConnectionInfo()
     conn = psycopg2.connect(
-                            # database="cyberdb",
-                            # user="postgres",
-                            # password="supersecretdbpassword1!"
-
                             database=connectionInfo["database"],
                             user=connectionInfo["user"],
                             password=connectionInfo["password"],
@@ -83,12 +79,6 @@ def home(request, response):
     else:
         print("Blank Username or Password on login")
 
-    # # If valid
-    # if username == 'darbym':
-    #     success(request, response)
-    # else:
-    #     print('no redirect')
-
 # Route for '/loginerror' path
 @application.route("/loginerror")  # Flask-style annotation
 def loginerror(response):
@@ -116,7 +106,8 @@ def success(request, response, useremail):
                          + '/success.html').read().format(user=useremail,
                                                           pending=pendingfriends,
                                                           friends=friends,
-                                                          location=getPosition(useremail))
+                                                          location=getPosition(useremail),
+                                                          availablefriends=htmlListAvailableFriends(useremail))
 
 # Route for '/register' path
 @application.route("/register")  # Flask-style annotation
@@ -146,8 +137,155 @@ def register(request, response):
         print("Blank Username or Password on Register")
 
 
+@application.route("/valueupdated")  # Flask-style annotation
+def valueupdated(response):
+    response.text = open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+                         + '/valueupdated.html').read()
+
+
+@application.route("/updateerror")  # Flask-style annotation
+def updateerror(response, errmsg):
+    response.text = open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+                         + '/updateerror.html').read().format(message=errmsg)
+
+# Route for '/updateusername' path
+@application.route("/updateusername")  # Flask-style annotation
+def updateusername(request, response):
+    response.text = open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+                         + '/updateusername.html').read()
+
+    currentusername = request.params.get('currentusername')
+    currentpass = request.params.get('currentpassword')
+    if currentpass is not '' and currentpass is not None:
+        currentpass = application.encrypt_string(currentpass)[:32]
+    newusername = request.params.get('newusername')
+
+    if (currentusername is not '') and (currentpass is not '') and (newusername is not '') and (currentusername is not None) and (currentpass is not None) and (newusername is not None):
+        validinfo = False
+        usernameavailable = False
+        # Check if login is valid
+        if currentusername != "default":
+            # Check for valid username/password
+            query = "SELECT * FROM people WHERE email='{}' AND pwhash='{}'".format(currentusername, currentpass)
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(query)
+                    if cursor.rowcount > 0:
+                        print("Username and Password match!")
+                        validinfo = True
+                    else:
+                        updateerror(response, "Invalid Username or Password! Cannot change your username.")
+            except psycopg2.Error as e:
+                print(e.pgerror)
+        else:
+            print("Blank Username or Password on Valid Credential Check")
+
+        # Check if new username is available
+        query = "SELECT * FROM people WHERE email='{}'".format(newusername)
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                if cursor.rowcount > 0:
+                    updateerror(response, "Your new username already exists! Please choose another.")
+                else:
+                    usernameavailable = True
+        except psycopg2.Error:
+            print(psycopg2.Error)
+
+        if validinfo and usernameavailable:
+            # Update Login Table
+            query1 = "UPDATE people SET email = '{}' WHERE email = '{}'".format(newusername, currentusername)
+
+            # Update Friend Table
+            query2 = "UPDATE knownpeople SET email = '{}' WHERE email = '{}'".format(newusername, currentusername)
+            query3 = "UPDATE knownpeople SET friendemail = '{}' WHERE friendemail = '{}'".format(newusername, currentusername)
+
+            # Update Location Table
+            query4 = "UPDATE position SET email = '{}' WHERE email = '{}'".format(newusername, currentusername)
+
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(query1)
+                    cursor.execute(query2)
+                    cursor.execute(query3)
+                    cursor.execute(query4)
+            except psycopg2.Error:
+                print(psycopg2.Error)
+            print("Successfully Updated Username {} to {}".format(currentusername, newusername))
+            valueupdated(response)
+    else:
+        print("Empty Values in Change Username")
+
+
+# Route for '/updatepassword' path
+@application.route("/updatepassword")  # Flask-style annotation
+def updatepassword(request, response):
+    response.text = open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+                         + '/updatepassword.html').read()
+    passmatch = False
+    validinfo = False
+
+    # Pull values from form
+    currentusername = request.params.get('currentusername', 'default')
+    currentpass = request.params.get('currentpassword', 'default')
+
+    newpass = request.params.get('newpassword')
+    confirmpass = request.params.get('confirmpassword')
+
+    if currentusername != 'default' and currentpass != 'default':
+
+        # Check if new password matches confirmation
+        if newpass == confirmpass:
+            if newpass is not None and len(newpass) > 0:
+                passmatch = True
+            else:
+                updateerror(response, "Your new password cannot be blank!")
+        else:
+            updateerror(response, "Your new password did not match the confirmation!")
+        # Check if User info is correct
+        if currentpass is not '' and currentpass is not None:
+            currentpass = application.encrypt_string(currentpass)[:32]
+
+        if (currentusername is not '') and (currentpass is not '') and (currentusername is not None) and (currentpass is not None):
+            # Check if login is valid
+            if currentusername != "default":
+                # Check for valid username/password
+                query = "SELECT * FROM people WHERE email='{}' AND pwhash='{}'".format(currentusername, currentpass)
+                try:
+                    with conn.cursor() as cursor:
+                        cursor.execute(query)
+                        if cursor.rowcount > 0:
+                            print("Username and Password match!")
+                            validinfo = True
+                        else:
+                            updateerror(response, "Invalid Username or Password! Cannot change your password.")
+                except psycopg2.Error as e:
+                    print(e.pgerror)
+            else:
+                print("Blank Username or Password on Valid Credential Check")
+
+            if validinfo and passmatch:
+                if newpass is not '' and newpass is not None:
+                    newpass = application.encrypt_string(newpass)[:32]
+
+                # Update Login Table
+                query = "UPDATE people SET pwhash = '{}' WHERE email = '{}'".format(newpass, currentusername)
+                try:
+                    with conn.cursor() as cursor:
+                        cursor.execute(query)
+                except psycopg2.Error:
+                    print(psycopg2.Error)
+                print("Successfully Updated Password!")
+                valueupdated(response)
+        else:
+            print("Empty Values in Change Password")
+    else:
+        print("Empty Submit For Change Password")
+
+
+
 def htmlFriendsTable(useremail, friendstatus):
-    query = "SELECT friendemail FROM knownpeople WHERE email='{}' AND status={}".format(useremail, friendstatus)
+    query = "SELECT email FROM knownpeople WHERE friendemail='{}' AND status={}".format(useremail, friendstatus)
     fullStr = "<table border=\"1\"><tr>"
     try:
         with conn.cursor() as cursor:
@@ -176,6 +314,39 @@ def getPosition(useremail):
     except psycopg2.Error as e:
         print(e.pgerror)
     return "[Latitude: {}] [Longitude: {}]".format(location[0], location[1])
+
+
+def htmlListAvailableFriends(useremail):
+    # Get list of all users in Database
+    query = "SELECT email FROM people"
+    availableFriends = []
+    temp_list = []
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            colnames = [desc[0] for desc in cursor.description]
+            for record in cursor:
+                availableFriends.append(record[0])
+
+            # Get list of pending friends and friends
+            query = "SELECT email FROM knownpeople WHERE friendemail='{}'".format(useremail)
+            cursor.execute(query)
+            # Remove friends from all users list
+            for record in cursor:
+                temp_list.append(record[0])
+                availableFriends.remove(record[0])
+    except psycopg2.Error as e:
+        print(e.pgerror)
+
+    # Add html tags to list
+    fullStr = "<table border=\"1\"><tr>"
+    fullStr += ''.join("<th>{}</th>".format(x) for x in colnames)
+    fullStr += "</tr>"
+    for value in availableFriends:
+        fullStr += "<tr>"
+        fullStr += ''.join("<td>{}</td>".format(value))
+        fullStr += "</tr>"
+    return fullStr
 
 
 # if __name__ == "__main__":
